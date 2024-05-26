@@ -1489,7 +1489,7 @@ if isTargetGame() then
             Rusted = {ar15 = "AR-15_Rusted", glock = "Glock 19_Rusted", ar15Sound = "rbxassetid://16496768586", glockSound = "rbxassetid://16338769384"},
             Frigid = {ar15 = "AR-15_Frigid", glock = "Glock 19_Frigid", ar15Sound = "rbxassetid://5400076200", glockSound = "rbxassetid://6196023927"},
             Anniversary = {ar15 = "AR-15_Anniversary", glock = "Glock 19_Anniversary", ar15Sound = "rbxassetid://5400076200", glockSound = "rbxassetid://244233148"},
-            Booster = {ar15 = "AR-15_Booster", glock = "Glock 19_Booster", ar15Sound = "rbxassetid://4981566342", glockSound = "rbxassetid://244233148"}
+            HellSpawn = {ar15 = "AR-15_HellSpawn", glock = "Glock 19_HellSpawn", ar15Sound = "rbxassetid://709722701", glockSound = "rbxassetid://244233148"}
         }
         
         local selected = skins[skin]
