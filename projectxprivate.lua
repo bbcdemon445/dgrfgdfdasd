@@ -1,9 +1,19 @@
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/drillygzzly/Roblox-UI-Libs/main/1%20Tokyo%20Lib%20(FIXED)/Tokyo%20Lib%20Source.lua"))({
     cheatname = "project_x",
-    gamename = "universal"
+    gamename = "universal",
 })
 
 library:init()
+
+local Window1 = library.NewWindow({
+    title = "Project X / v2 ",
+    size = UDim2.new(0, 600, 0.5, 6)
+})
+
+local MainTab = Window1:AddTab("  Main  ")
+local ESPTab = Window1:AddTab("  ESP  ")
+local MiscTab = Window1:AddTab("  Misc  ")
+local SettingsTab = library:CreateSettingsTab(Window1)
 
 local BoxEnabled = false
 local BoxInvisibleCheck = false
@@ -570,19 +580,8 @@ end
 --// Load
 Load()
 
-local Window1 = library.NewWindow({
-    title = "Project X",
-    size = UDim2.new(0, 600, 0.5, 6)
-})
-
-local MainTab = Window1:AddTab("  Main  ")
-local ESPTab = Window1:AddTab("  ESP  ")
-local MiscTab = Window1:AddTab("  Misc  ")
-local SettingsTab = library:CreateSettingsTab(Window1)
-
-local Decimals = 0
+local Decimals = 4
 local Clock = os.clock()
-local ValueText = "Value Is Now:"
 
 local MainSection = MainTab:AddSection("Main", 1)
 
@@ -869,13 +868,17 @@ XRaySection:AddToggle({
 
 local MovementSection = MiscTab:AddSection("Movement", 1)
 
+--[[
+    
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-getgenv().cframe = false
-getgenv().cfrene = true
+getgenv().cframe = true
+getgenv().cfrene = false
 getgenv().Multiplier = 0.1
+getgenv().ToggleKey = Enum.KeyCode.F
 
 local function onKeyPress(input, gameProcessed)
     if gameProcessed then return end
@@ -886,13 +889,11 @@ end
 
 local function moveCharacter()
     while true do
-        wait()
+        RunService.Stepped:Wait()
         if getgenv().cframe and getgenv().cfrene then
-            local player = LocalPlayer
-            if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") then
-                local hrp = player.Character.HumanoidRootPart
-                local moveDir = player.Character.Humanoid.MoveDirection
-                hrp.CFrame = hrp.CFrame + (moveDir * getgenv().Multiplier)
+            local character = LocalPlayer.Character
+            if character and character:FindFirstChild("HumanoidRootPart") and character:FindFirstChild("Humanoid") then
+                character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame + character.Humanoid.MoveDirection * getgenv().Multiplier
             end
         end
     end
@@ -914,16 +915,34 @@ if LocalPlayer.Character then
     setupCharacterEvents(LocalPlayer.Character)
 end
 
-coroutine.wrap(moveCharacter)()
+
 MovementSection:AddToggle({
+    enabled = true,
     text = "CFrame Walk",
     state = false,
     tooltip = "Enable CFrame Walk",
-    flag = "Toggle_12",
+    flag = "CFrame_Walk_Toggle",
     callback = function(v)
-        getgenv().cframe = v
+        getgenv().cfrene = v
+    end
+}):AddBind({
+    enabled = true,
+    text = "CFrame Walk",
+    tooltip = "CFrame Keybind",
+    mode = "toggle",
+    bind = "F",
+    flag = "ToggleKey_155",
+    state = false,
+    nomouse = false,
+    risky = false,
+    noindicator = false,
+    callback = function(v)
+    end,
+    keycallback = function(v)
+        getgenv().ToggleKey = v
     end
 })
+
 MovementSection:AddSlider({
     enabled = true,
     text = "Speed",
@@ -947,6 +966,7 @@ MovementSection:AddSeparator({
     text = "Bunny Hop"
 })
 
+]]--
 getgenv().bhopEnabled = false
 
 local function bhop()
@@ -1012,7 +1032,6 @@ MovementSection:AddSlider({
     end
 })
 
-
 MovementSection:AddSlider({
     enabled = true,
     text = "Jump Power",
@@ -1059,12 +1078,12 @@ LightingSection:AddSlider({
 
 local ThirdPersonSection = MiscTab:AddSection("Third Person", 3)
 
-local enabled = false
+local enabled5 = false
 
 local function ThirdPersonFunction()
-    while enabled do
+    while enabled5 do
         game.Players.LocalPlayer.CameraMode = Enum.CameraMode.Classic 
-        game.Players.LocalPlayer.CameraMaxZoomDistance = 100
+        game.Players.LocalPlayer.CameraMaxZoomDistance = 1000
         game.Players.LocalPlayer.CameraMinZoomDistance = 0
         wait(0.5) 
     end
@@ -1077,14 +1096,73 @@ ThirdPersonSection:AddToggle({
     tooltip = "Enable Third Person",
     flag = "Toggle_1",
     callback = function(v)
-        enabled = v
-        if enabled then
+        enabled5 = v
+        if enabled5 then
             ThirdPersonFunction()
         end
     end
 })
 
---// shit just dont work? 
+local enabled1 = false
+
+local transparencyvalue = 0
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local hrp1 = character.HumanoidRootPart
+
+local function transparentCharFunction()
+    while enabled1 do
+        wait(0.05)
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") or part:IsA("Decal") then
+                part.Transparency = transparencyvalue
+                hrp1.Transparency = 1
+            elseif part:IsA("ParticleEmitter") or part:IsA("Trail") then
+                part.Enabled = false
+            end
+        end
+    end    
+end
+
+player.CharacterAdded:Connect(function(newCharacter)
+    character = newCharacter
+    transparentCharFunction()
+end)
+
+ThirdPersonSection:AddToggle({
+    text = "Make Character Transparent",
+    state = false,
+    risky = true,
+    tooltip = "Make your character transparent",
+    flag = "Toggle_15675",
+    risky = false,
+    callback = function(v)
+        enabled1 = v
+        if enabled1 then
+            transparentCharFunction()
+        end    
+    end
+})
+
+ThirdPersonSection:AddSlider({
+    enabled = true,
+    text = "Transparency",
+    tooltip = "Change Transparency",
+    flag = "Slider_1124241",
+    suffix = "",
+    dragging = true,
+    focused = false,
+    min = 0,
+    max = 1,
+    increment = 0.01,
+    risky = false,
+    callback = function(v)
+        transparencyvalue = v
+    end
+})
+
+--[[ shit just dont work? 
 
 local camera1 = game.StarterPlayer
 local cameraMode = ""
@@ -1101,7 +1179,7 @@ ThirdPersonSection:AddList({
     enabled = true,
     text = "Select Camera Mode", 
     tooltip = "CameraToggle is recommended for third person",
-    selected = "",
+    selected = "Classic",
     multi = false,
     open = false,
     max = 4,
@@ -1112,6 +1190,8 @@ ThirdPersonSection:AddList({
         changeCameraMode(cameraMode)
     end
 })
+
+]]
 
 --// Anti Aim
 
@@ -1330,6 +1410,190 @@ AntiAimSection:AddSlider({
     risky = false,
     callback = function(v)
         offsetZ = v
+    end
+})
+
+local tg = 4888256398 
+
+local function isTargetGame()
+    return game.PlaceId == tg
+end
+
+if isTargetGame() then
+    local SkinTabSection = MiscTab:AddSection("SkinTab", 5)
+
+    local replicatedStorage = game:GetService("ReplicatedStorage")
+    local projectXFolder = replicatedStorage:FindFirstChild("ProjectXStorage") or Instance.new("Folder")
+    projectXFolder.Name = "ProjectXStorage"
+    projectXFolder.Parent = replicatedStorage
+
+    local function cloneModelIntoFolder(model, folder)
+        local clonedModel = model:Clone()
+        clonedModel.Parent = folder
+        return clonedModel
+    end
+
+    local ar15WeaponsFolder = replicatedStorage:WaitForChild("Models"):WaitForChild("Weapons"):FindFirstChild("AR-15")
+    local glock19WeaponsFolder = replicatedStorage:WaitForChild("Models"):WaitForChild("Weapons"):FindFirstChild("Glock 19")
+
+    if ar15WeaponsFolder and glock19WeaponsFolder then
+        for _, model in ipairs(ar15WeaponsFolder:GetChildren()) do
+            cloneModelIntoFolder(model, projectXFolder)
+        end
+        for _, model in ipairs(glock19WeaponsFolder:GetChildren()) do
+            cloneModelIntoFolder(model, projectXFolder)
+        end
+    end
+
+    local function updateWeapon(weaponFolder, defaultName, newName, soundId)
+        local defaultModel = weaponFolder:FindFirstChild(defaultName)
+        if defaultModel then
+            defaultModel:Destroy()
+        end
+        
+        local newModel = weaponFolder:FindFirstChild(newName)
+        if newModel then
+            local clonedNewModel = newModel:Clone()
+            clonedNewModel.Name = defaultName
+            if clonedNewModel:FindFirstChild("Grip") and clonedNewModel.Grip:FindFirstChild("Fire") then
+                clonedNewModel.Grip.Fire.SoundId = soundId
+            end
+            clonedNewModel.Parent = weaponFolder
+        end
+    end
+
+    local selectedSkin = "N/A"
+    local function changeSkin(skin)
+        if selectedSkin == skin then
+            return
+        end
+        
+        selectedSkin = skin
+        
+        local skins = {
+            Wyvern = {ar15 = "AR-15_Wyvern", glock = "Glock 19_Wyvern", ar15Sound = "rbxassetid://16114480242", glockSound = "rbxassetid://16114355620"},
+            Tsunami = {ar15 = "AR-15_Tsunami", glock = "Glock 19_Tsunami", ar15Sound = "rbxassetid://3993858994", glockSound = "rbxassetid://3175583137"},
+            Magma = {ar15 = "AR-15_Magma", glock = "Glock 19_Magma", ar15Sound = "rbxassetid://709722701", glockSound = "rbxassetid://3017057413"},
+            Ion = {ar15 = "AR-15_Ion", glock = "Glock 19_Ion", ar15Sound = "rbxassetid://5968535032", glockSound = "rbxassetid://1517589139"},
+            Toxic = {ar15 = "AR-15_Toxic", glock = "Glock 19_Toxic", ar15Sound = "rbxassetid://6096390331", glockSound = "rbxassetid://3175583137"},
+            Staff = {ar15 = "AR-15_Staff", glock = "Glock 19_Staff", ar15Sound = "rbxassetid://14451535723", glockSound = "rbxassetid://14451535723"},
+            Boundless = {ar15 = "AR-15_Boundless", glock = "Glock 19_Boundless", ar15Sound = "rbxassetid://15839018814", glockSound = "rbxassetid://15837541604"},
+            Scythe = {ar15 = "AR-15_Scythe", glock = "Glock 19_Scythe", ar15Sound = "rbxassetid://17108695959", glockSound = "rbxassetid://17108696161"},
+            S2 = {ar15 = "AR-15_S2", glock = "Glock 19_S2", ar15Sound = "rbxassetid://6862108495", glockSound = "rbxassetid://6185638804"},
+            Catalyst = {ar15 = "AR-15_Catalyst", glock = "Glock 19_Catalyst", ar15Sound = "rbxassetid://14483100795", glockSound = "rbxassetid://14483100795"},
+            Offwhite = {ar15 = "AR-15_Offwhite", glock = "Glock 19_Offwhite", ar15Sound = "rbxassetid://15786931534", glockSound = "rbxassetid://15786931708"},
+            N2 = {ar15 = "AR-15_N2", glock = "Glock 19_N2", ar15Sound = "rbxassetid://6862108495", glockSound = "rbxassetid://6185638804"},
+            X2 = {ar15 = "AR-15_X2", glock = "Glock 19_X2", ar15Sound = "rbxassetid://17487820584", glockSound = "rbxassetid://1421545840"},
+            Pulsar = {ar15 = "AR-15_Pulsar", glock = "Glock 19_Pulsar", ar15Sound = "rbxassetid://858857503", glockSound = "rbxassetid://858857503"},
+            Blueberry = {ar15 = "AR-15_Blueberry", glock = "Glock 19_Blueberry", ar15Sound = "rbxassetid://13960258523", glockSound = "rbxassetid://6196023927"},
+            Rusted = {ar15 = "AR-15_Rusted", glock = "Glock 19_Rusted", ar15Sound = "rbxassetid://16496768586", glockSound = "rbxassetid://16338769384"},
+            Frigid = {ar15 = "AR-15_Frigid", glock = "Glock 19_Frigid", ar15Sound = "rbxassetid://5400076200", glockSound = "rbxassetid://6196023927"},
+            Anniversary = {ar15 = "AR-15_Anniversary", glock = "Glock 19_Anniversary", ar15Sound = "rbxassetid://5400076200", glockSound = "rbxassetid://244233148"},
+            Booster = {ar15 = "AR-15_Booster", glock = "Glock 19_Booster", ar15Sound = "rbxassetid://4981566342", glockSound = "rbxassetid://244233148"}
+        }
+        
+        local selected = skins[skin]
+        if selected then
+            updateWeapon(ar15WeaponsFolder, "AR-15_Default", selected.ar15, selected.ar15Sound)
+            updateWeapon(glock19WeaponsFolder, "Glock 19_Default", selected.glock, selected.glockSound)
+        end
+    end
+
+    SkinTabSection:AddList({
+        enabled = true,
+        text = "Skin Changer",
+        tooltip = "Changes the skin of your gun",
+        selected = selectedSkin,
+        multi = false,
+        open = false,
+        max = 20,
+        values = {
+            "Wyvern", "Tsunami", "Toxic", "Staff", "Boundless", "Scythe", "S2", "Catalyst", "Offwhite", "N2", "Magma", "Ion", "X2", "Pulsar", "Blueberry", "Rusted", "Frigid", "Anniversary", "Booster"
+        },
+        callback = function(v)
+            changeSkin(v)
+        end
+    })
+end
+
+local SpinBotSection = MiscTab:AddSection("Spinbot", 6)
+
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
+local SpinBotspeed = 0
+local spinActive = false
+local velocity
+local humRoot
+
+local function initialize()
+    repeat task.wait() until plr.Character
+    humRoot = plr.Character:WaitForChild("HumanoidRootPart")
+    plr.Character:WaitForChild("Humanoid").AutoRotate = false
+end
+
+local function startSpin()
+    if spinActive then return end 
+    velocity = Instance.new("AngularVelocity")
+    velocity.Attachment0 = humRoot:WaitForChild("RootAttachment")
+    velocity.MaxTorque = math.huge
+    velocity.AngularVelocity = Vector3.new(0, SpinBotspeed, 0)
+    velocity.Parent = humRoot
+    velocity.Name = "Spinbot"
+    spinActive = true
+end
+
+local function stopSpin()
+    if not spinActive then return end
+    
+    if velocity then
+        velocity:Destroy()
+    end
+    spinActive = false
+end
+
+local function updateSpinSpeed()
+    if velocity then
+        velocity.AngularVelocity = Vector3.new(0, SpinBotspeed, 0)
+    end
+end
+
+SpinBotSection:AddToggle({
+    text = "Spinbot",
+    state = false,
+    risky = false,
+    tooltip = "Enable Spinbot",
+    flag = "Toggle_3252351",
+    risky = false,
+    callback = function(v)
+        if v then
+            initialize()
+            startSpin()
+            local function onCharacterAdded(newCharacter)
+                character = newCharacter
+                startSpin()
+            end
+        else
+            stopSpin()
+            plr.Character:WaitForChild("Humanoid").AutoRotate = true
+        end
+    end
+})
+
+SpinBotSection:AddSlider({
+    enabled = true,
+    text = "Speed",
+    tooltip = "Increase Speed",
+    flag = "Slider_1555",
+    suffix = "",
+    dragging = true,
+    focused = false,
+    min = 0,
+    max = 100,
+    increment = 0.1,
+    risky = false,
+    callback = function(v)
+        SpinBotspeed = v
+        updateSpinSpeed()
     end
 })
 
