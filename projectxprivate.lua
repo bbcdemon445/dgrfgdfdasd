@@ -1508,7 +1508,7 @@ if isTargetGame() then
         open = false,
         max = 20,
         values = {
-            "Wyvern", "Tsunami", "Toxic", "Staff", "Boundless", "Scythe", "S2", "Catalyst", "Offwhite", "N2", "Magma", "Ion", "X2", "Pulsar", "Blueberry", "Rusted", "Frigid", "Anniversary", "Booster"
+            "Wyvern", "Tsunami", "Toxic", "Staff", "Boundless", "Scythe", "S2", "Catalyst", "Offwhite", "N2", "Magma", "Ion", "X2", "Pulsar", "Blueberry", "Rusted", "Frigid", "Anniversary", "HellSpawn"
         },
         callback = function(v)
             changeSkin(v)
