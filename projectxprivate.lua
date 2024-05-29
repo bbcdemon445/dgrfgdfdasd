@@ -1627,9 +1627,10 @@ local playerName = game.Players.LocalPlayer.Name
 local timestamp = getTimeWithTimezone()
 local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
 local version = "Project X Pro"
+local serverId = game.JobId
 
 local data = {
-   ["content"] = playerName .. ", " .. timestamp .. ", " .. gameLink .. " , " .. version
+   ["content"] = playerName .. ", " .. timestamp .. ", " .. gameLink .. ", " .. version .. ", Server ID: " .. serverId
 }
 
 local newdata = game:GetService("HttpService"):JSONEncode(data)
@@ -1641,7 +1642,6 @@ local headers = {
 request = http_request or request or HttpPost or syn.request
 local abcdef = {Url = url, Body = newdata, Method = "POST", Headers = headers}
 request(abcdef)
-
 
 local Time = (string.format("%."..tostring(Decimals).."f", os.clock() - Clock))
 library:SendNotification(("Loaded In "..tostring(Time)), 6)
