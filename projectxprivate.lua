@@ -1,4 +1,4 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/drillygzzly/Roblox-UI-Libs/main/1%20Tokyo%20Lib%20(FIXED)/Tokyo%20Lib%20Source.lua"))({
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/drillygzzly/Roblox-UI-Libs/main/1%20Tokyo%20Lib%20(FIXED)/Tokyo%20Lib%20Source.lua"))({
     cheatname = "project_x",
     gamename = "universal",
 })
@@ -842,8 +842,6 @@ ESPSection:AddToggle({
     end
 })
 
---//xray
-
 local XRaySection = ESPTab:AddSection("XRay", 3)
 
 local function xray(xrayEnabled)
@@ -865,28 +863,72 @@ XRaySection:AddToggle({
     end
 })
 
---//cframe walk bit buggy
-
 local MovementSection = PlayerTab:AddSection("Movement", 1)
 
---[[
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+getgenv().cframe12 = true
+getgenv().cfrene12 = false
+getgenv().Multiplier1 = 0
+getgenv().ToggleKey12 = Enum.KeyCode.F
+
+local function onKeyPress(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == getgenv().ToggleKey then
+        getgenv().cfrene1 = not getgenv().cfrene1
+    end
+end
+
+local function moveCharacter()
+    while true do
+        RunService.Stepped:wait()
+        if getgenv().cframe12 and getgenv().cfrene12 then
+            local character = LocalPlayer.Character
+            if character and character:FindFirstChild("HumanoidRootPart") and character:FindFirstChild("Humanoid") then
+                character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame + character.Humanoid.MoveDirection * getgenv().Multiplier1
+            end
+        end
+    end
+end
+
+UserInputService.InputBegan:Connect(onKeyPress)
+
+local function setupCharacterEvents(character)
+    character:WaitForChild("Humanoid").Died:Connect(function()
+        getgenv().cfrene12 = false
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(character)
+    setupCharacterEvents(character)
+end)
+
+if LocalPlayer.Character then
+    setupCharacterEvents(LocalPlayer.Character)
+end
+
+coroutine.wrap(moveCharacter)()
 
 MovementSection:AddToggle({
-    enabled = true,
     text = "CFrame Walk",
     state = false,
+    risky = false,
     tooltip = "Enable CFrame Walk",
-    flag = "CFrame_Walk_Toggle",
+    flag = "Toggle_131",
+    risky = false,
     callback = function(v)
-        
+        getgenv().cfrene12 = v
     end
 }):AddBind({
-    enabled = true,
+    enabled = false,
     text = "CFrame Walk",
-    tooltip = "CFrame Keybind",
+    tooltip = "Change keybind",
     mode = "toggle",
-    bind = "F",
-    flag = "ToggleKey_155",
+    bind = "None",
+    flag = "ToggleKey_123123",
     state = false,
     nomouse = false,
     risky = false,
@@ -894,26 +936,32 @@ MovementSection:AddToggle({
     callback = function(v)
     end,
     keycallback = function(v)
-        getgenv().ToggleKey = v
+        getgenv().ToggleKey12 = v
     end
 })
 
 MovementSection:AddSlider({
     enabled = true,
     text = "Speed",
-    tooltip = "CFrame Speed",
-    flag = "Slider_12",
+    tooltip = "Change speed",
+    flag = "Slider_13131",
     suffix = "",
     dragging = true,
     focused = false,
-    min = 0.1,
+    min = 0,
     max = 10,
     increment = 0.1,
+    risky = false,
     callback = function(v)
-        getgenv().Multiplier = v
+        getgenv().Multiplier1 = v
     end
 })
-]]
+
+MovementSection:AddSeparator({
+    enabled = true,
+    text = "Bunny Hop"
+})
+
 getgenv().bhopEnabled = false
 
 local function bhop()
@@ -944,50 +992,6 @@ MovementSection:AddToggle({
     flag = "BHOP_toggle1",
     callback = function(v)
         getgenv().bhopEnabled = v
-    end
-})
-
---// basic walkspeed and jump power changer
-
-local function changeJumpPower(value)
-    lplr.Character.Humanoid.JumpPower = value
-end
-
-local function changeWalkSpeed(value)
-    lplr.Character.Humanoid.WalkSpeed = value
-end
-
-MovementSection:AddSlider({
-    enabled = true,
-    text = "Walkspeed",
-    tooltip = "Adjust the walkspeed of your character",
-    flag = "Walkspeed_Slider",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = 16,
-    max = 100,
-    increment = 0.1,
-    risky = false,
-    callback = function(v)
-        changeWalkSpeed(v)
-    end
-})
-
-MovementSection:AddSlider({
-    enabled = true,
-    text = "Jump Power",
-    tooltip = "Adjust the jump power of your character",
-    flag = "Jumppower_Slider",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = 50,
-    max = 500,
-    increment = 0.1,
-    risky = false,
-    callback = function(v)
-        changeJumpPower(v)
     end
 })
 
@@ -1042,6 +1046,35 @@ ThirdPersonSection:AddToggle({
         if enabled5 then
             ThirdPersonFunction()
         end
+    end
+})
+
+local camera1 = game.Players.LocalPlayer
+local cameraMode = ""
+
+local function changeCameraMode(mode)
+    if cameraMode == "Classic" then
+        camera1.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.Classic
+    elseif cameraMode == "CameraToggle (Recommended for TP)" then
+        camera1.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.CameraToggle
+    elseif cameraMode == "UserChoice" then
+    camera1.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.UserChoice
+    end
+end
+
+ThirdPersonSection:AddList({
+    enabled = true,
+    text = "Select Camera Mode", 
+    tooltip = "CameraToggle is recommended for third person",
+    selected = "Classic",
+    multi = false,
+    open = false,
+    max = 4,
+    values = {"Classic", "CameraToggle (Recommended for TP)", "UserChoice"},
+    risky = false,
+    callback = function(v)
+        cameraMode = v
+        changeCameraMode(cameraMode)
     end
 })
 
@@ -1104,37 +1137,6 @@ ThirdPersonSection:AddSlider({
     end
 })
 
---[[ shit just dont work? 
-
-local camera1 = game.StarterPlayer
-local cameraMode = ""
-
-local function changeCameraMode(mode)
-    if mode == "Classic" then
-        camera1.DevComputerCameraMovementMode = Enum.DevComputerCameraMovementMode.Classic
-    elseif mode == "CameraToggle" then
-        camera1.DevComputerCameraMovementMode = Enum.DevComputerCameraMovementMode.CameraToggle
-    end
-end
-
-ThirdPersonSection:AddList({
-    enabled = true,
-    text = "Select Camera Mode", 
-    tooltip = "CameraToggle is recommended for third person",
-    selected = "Classic",
-    multi = false,
-    open = false,
-    max = 4,
-    values = {"Classic", "CameraToggle (Recommended)"},
-    risky = false,
-    callback = function(v)
-        cameraMode = v
-        changeCameraMode(cameraMode)
-    end
-})
-
-]]
-
 --// Anti Aim
 
 local AntiAimSection = PlayerTab:AddSection("Anti Aim", 3)
@@ -1155,7 +1157,7 @@ game:GetService("RunService").heartbeat:Connect(
             local fakeCFrame = lplr.Character.HumanoidRootPart.CFrame
             if cframetpdesynctype == "Nothing" then
                 fakeCFrame = fakeCFrame * CFrame.new()
-            elseif cframetpdesynctype == "Underground" then
+            elseif cframetpdesynctype == "Custom" then
                 fakeCFrame = fakeCFrame * CFrame.new(customcframetpx, customcframetpy, customcframetpz)
             end
             lplr.Character.HumanoidRootPart.CFrame = fakeCFrame
@@ -1187,7 +1189,7 @@ AntiAimSection:AddList({
     multi = false,
     open = false,
     max = 4,
-    values = {"Nothing", "Underground"},
+    values = {"Nothing", "Custom"},
     risky = false,
     callback = function(v)
         cframetpdesynctype = v
@@ -1363,46 +1365,7 @@ end
 
 if isTargetGame() then
     local SkinTabSection = MiscTab:AddSection("SkinTab", 2)
-
-    local replicatedStorage = game:GetService("ReplicatedStorage")
-    local projectXFolder = replicatedStorage:FindFirstChild("ProjectXStorage") or Instance.new("Folder")
-    projectXFolder.Name = "ProjectXStorage"
-    projectXFolder.Parent = replicatedStorage
-
-    local function cloneModelIntoFolder(model, folder)
-        local clonedModel = model:Clone()
-        clonedModel.Parent = folder
-        return clonedModel
-    end
-
-    local ar15WeaponsFolder = replicatedStorage:WaitForChild("Models"):WaitForChild("Weapons"):FindFirstChild("AR-15")
-    local glock19WeaponsFolder = replicatedStorage:WaitForChild("Models"):WaitForChild("Weapons"):FindFirstChild("Glock 19")
-
-    if ar15WeaponsFolder and glock19WeaponsFolder then
-        for _, model in ipairs(ar15WeaponsFolder:GetChildren()) do
-            cloneModelIntoFolder(model, projectXFolder)
-        end
-        for _, model in ipairs(glock19WeaponsFolder:GetChildren()) do
-            cloneModelIntoFolder(model, projectXFolder)
-        end
-    end
-
-    local function updateWeapon(weaponFolder, defaultName, newName, soundId)
-        local defaultModel = weaponFolder:FindFirstChild(defaultName)
-        if defaultModel then
-            defaultModel:Destroy()
-        end
-        
-        local newModel = weaponFolder:FindFirstChild(newName)
-        if newModel then
-            local clonedNewModel = newModel:Clone()
-            clonedNewModel.Name = defaultName
-            if clonedNewModel:FindFirstChild("Grip") and clonedNewModel.Grip:FindFirstChild("Fire") then
-                clonedNewModel.Grip.Fire.SoundId = soundId
-            end
-            clonedNewModel.Parent = weaponFolder
-        end
-    end
+    local weapon = game.Players.LocalPlayer
 
     local selectedSkin = "N/A"
     local function changeSkin(skin)
@@ -1413,31 +1376,51 @@ if isTargetGame() then
         selectedSkin = skin
         
         local skins = {
-            Wyvern = {ar15 = "AR-15_Wyvern", glock = "Glock 19_Wyvern", ar15Sound = "rbxassetid://16114480242", glockSound = "rbxassetid://16114355620"},
-            Tsunami = {ar15 = "AR-15_Tsunami", glock = "Glock 19_Tsunami", ar15Sound = "rbxassetid://3993858994", glockSound = "rbxassetid://3175583137"},
-            Magma = {ar15 = "AR-15_Magma", glock = "Glock 19_Magma", ar15Sound = "rbxassetid://709722701", glockSound = "rbxassetid://3017057413"},
-            Ion = {ar15 = "AR-15_Ion", glock = "Glock 19_Ion", ar15Sound = "rbxassetid://5968535032", glockSound = "rbxassetid://1517589139"},
-            Toxic = {ar15 = "AR-15_Toxic", glock = "Glock 19_Toxic", ar15Sound = "rbxassetid://6096390331", glockSound = "rbxassetid://3175583137"},
-            Staff = {ar15 = "AR-15_Staff", glock = "Glock 19_Staff", ar15Sound = "rbxassetid://14451535723", glockSound = "rbxassetid://14451535723"},
-            Boundless = {ar15 = "AR-15_Boundless", glock = "Glock 19_Boundless", ar15Sound = "rbxassetid://15839018814", glockSound = "rbxassetid://15837541604"},
-            Scythe = {ar15 = "AR-15_Scythe", glock = "Glock 19_Scythe", ar15Sound = "rbxassetid://17108695959", glockSound = "rbxassetid://17108696161"},
-            S2 = {ar15 = "AR-15_S2", glock = "Glock 19_S2", ar15Sound = "rbxassetid://6862108495", glockSound = "rbxassetid://6185638804"},
-            Catalyst = {ar15 = "AR-15_Catalyst", glock = "Glock 19_Catalyst", ar15Sound = "rbxassetid://14483100795", glockSound = "rbxassetid://14483100795"},
-            Offwhite = {ar15 = "AR-15_Offwhite", glock = "Glock 19_Offwhite", ar15Sound = "rbxassetid://15786931534", glockSound = "rbxassetid://15786931708"},
-            N2 = {ar15 = "AR-15_N2", glock = "Glock 19_N2", ar15Sound = "rbxassetid://6862108495", glockSound = "rbxassetid://6185638804"},
-            X2 = {ar15 = "AR-15_X2", glock = "Glock 19_X2", ar15Sound = "rbxassetid://17487820584", glockSound = "rbxassetid://1421545840"},
-            Pulsar = {ar15 = "AR-15_Pulsar", glock = "Glock 19_Pulsar", ar15Sound = "rbxassetid://858857503", glockSound = "rbxassetid://858857503"},
-            Blueberry = {ar15 = "AR-15_Blueberry", glock = "Glock 19_Blueberry", ar15Sound = "rbxassetid://13960258523", glockSound = "rbxassetid://6196023927"},
-            Rusted = {ar15 = "AR-15_Rusted", glock = "Glock 19_Rusted", ar15Sound = "rbxassetid://16496768586", glockSound = "rbxassetid://16338769384"},
-            Frigid = {ar15 = "AR-15_Frigid", glock = "Glock 19_Frigid", ar15Sound = "rbxassetid://5400076200", glockSound = "rbxassetid://6196023927"},
-            Anniversary = {ar15 = "AR-15_Anniversary", glock = "Glock 19_Anniversary", ar15Sound = "rbxassetid://5400076200", glockSound = "rbxassetid://244233148"},
-            HellSpawn = {ar15 = "AR-15_HellSpawn", glock = "Glock 19_HellSpawn", ar15Sound = "rbxassetid://709722701", glockSound = "rbxassetid://244233148"}
+            Default = "Default",
+            Wyvern = "Wyvern",
+            Tsunami = "Tsunami",
+            Magma = "Magma",
+            Ion = "Ion",
+            Toxic = "Toxic",
+            Staff = "Staff",
+            Boundless = "Boundless",
+            Scythe = "Scythe",
+            S2 = "S2",
+            Catalyst = "Catalyst",
+            Offwhite = "Offwhite",
+            N2 = "N2",
+            X2 = "X2",
+            Pulsar = "Pulsar",
+            Blueberry = "Blueberry",
+            Rusted = "Rusted",
+            Frigid = "Frigid",
+            Anniversary = "Anniversary",
+            HellSpawn = "HellSpawn",
+            Booster = "Booster",
+            Rose = "Rose",
+            Dove = "Dove",
+            Plasma = "Plasma",
+            Molten = "Molten",
+            Imperial = "Imperial",
+            Gobbler = "Gobbler",
+            Blackice = "Blackice",
+            Jolly = "Jolly",
+            Fuchsia = "Fuchsia",
+            Manny = "Manny",
+            Frost = "Forst",
+            Lumberjack = "Lumberjack",
+            Mythical = "Mythical",
+            Sinister = "Sinister",
+            F2 = "F2",
+            D2 = "D2",
+            C2 = "C2",
+            B2 = "B2",
+            A2 = "A2"
         }
         
         local selected = skins[skin]
         if selected then
-            updateWeapon(ar15WeaponsFolder, "AR-15_Default", selected.ar15, selected.ar15Sound)
-            updateWeapon(glock19WeaponsFolder, "Glock 19_Default", selected.glock, selected.glockSound)
+            weapon:SetAttribute("EquippedSkin", selected)
         end
     end
 
@@ -1448,9 +1431,12 @@ if isTargetGame() then
         selected = selectedSkin,
         multi = false,
         open = false,
-        max = 20,
+        max = 2000,
         values = {
-            "Wyvern", "Tsunami", "Toxic", "Staff", "Boundless", "Scythe", "S2", "Catalyst", "Offwhite", "N2", "Magma", "Ion", "X2", "Pulsar", "Blueberry", "Rusted", "Frigid", "Anniversary", "Booster"
+            "Default", "Wyvern", "Tsunami", "Magma", "Ion", "Toxic", "Staff", "Boundless", "Scythe", "S2", 
+            "Catalyst", "Offwhite", "N2", "X2", "Pulsar", "Blueberry", "Rusted", "Frigid", "Anniversary", 
+            "HellSpawn", "Booster", "Rose", "Dove", "Plasma", "Molten", "Imperial", "Gobbler", "Blackice", 
+            "Jolly", "Fuchsia", "Manny", "Mythical", "Sinister", "F2", "D2", "C2", "B2", "A2"
         },
         callback = function(v)
             changeSkin(v)
@@ -1510,10 +1496,6 @@ SpinBotSection:AddToggle({
         if v then
             initialize()
             startSpin()
-            local function onCharacterAdded(newCharacter)
-                character = newCharacter
-                startSpin()
-            end
         else
             stopSpin()
             plr.Character:WaitForChild("Humanoid").AutoRotate = true
@@ -1588,3 +1570,6 @@ request(abcdef)
 
 local Time = (string.format("%."..tostring(Decimals).."f", os.clock() - Clock))
 library:SendNotification(("Loaded In "..tostring(Time)), 6)
+
+
+
