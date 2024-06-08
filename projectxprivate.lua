@@ -6,7 +6,7 @@ local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/drill
 library:init()
 
 local Window1 = library.NewWindow({
-    title = "Project X / v2 ",
+    title = "Project X / V2 ",
     size = UDim2.new(0, 600, 0.5, 6)
 })
 
@@ -29,7 +29,6 @@ local DistanceESP_Enabled = false
 local DistanceESP_TeamCheck = false
 local DistanceESP_InvisCheck = false
 
--- Get the local player
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
@@ -116,10 +115,10 @@ Players.PlayerRemoving:Connect(function(player)
     end
 end)
 
+
 local lplr = game.Players.LocalPlayer
-local camera = game:GetService("Workspace").CurrentCamera
-local CurrentCamera = workspace.CurrentCamera
-local worldToViewportPoint = CurrentCamera.worldToViewportPoint
+local camera = workspace.CurrentCamera
+local worldToViewportPoint = camera.worldToViewportPoint
 
 local HeadOff = Vector3.new(0, 0.5, 0)
 local LegOff = Vector3.new(0, 3, 0)
@@ -141,40 +140,41 @@ local function createHealthbar()
     return healthBackground, healthBar
 end
 
-local function updateHealthbar(healthBackground, healthBar, v, position, boxSize)
-    if v.Character and v.Character:FindFirstChild("Humanoid") then
-        local health = v.Character.Humanoid.Health
-        local maxHealth = v.Character.Humanoid.MaxHealth
-
-        if health > 0 and maxHealth > 0 then
-            local Vector, onScreen = camera:worldToViewportPoint(v.Character.HumanoidRootPart.Position)
-
-            local RootPart = v.Character.HumanoidRootPart
-            local RootPosition, RootVis = worldToViewportPoint(CurrentCamera, RootPart.Position)
-
-            local healthRatio = health / maxHealth
-
-            local healthBarWidth = 1
+local function updateHealthbar(healthBackground, healthBar, player, position, boxSize)
+    local character = player.Character
+    if character then
+        local humanoid = character:FindFirstChild("Humanoid")
+        if humanoid and humanoid.Health > 0 and humanoid.MaxHealth > 0 then
+            local healthRatio = humanoid.Health / humanoid.MaxHealth
+            local healthBarWidth = 2.5
             local healthBarHeight = boxSize.Y
             local healthBarOffset = 5
 
-            healthBackground.Size = Vector2.new(healthBarWidth, healthBarHeight)
-            healthBackground.Position = position - Vector2.new(healthBarOffset + healthBarWidth, 0)
-            healthBackground.Visible = onScreen and Healthbars and (not HealthBarInvischeck or v.Character.Head.Transparency ~= 1)
+            local rootPart = character:FindFirstChild("HumanoidRootPart")
+            if rootPart then
+                local vector, onScreen = worldToViewportPoint(camera, rootPart.Position)
+                if onScreen and Healthbars and (not HealthBarInvischeck or character.Head.Transparency ~= 1) then
+                    local healthBarHeightAdjusted = boxSize.Y * healthRatio
+                    healthBackground.Size = Vector2.new(healthBarWidth, healthBarHeight)
+                    healthBackground.Position = position - Vector2.new(healthBarOffset + healthBarWidth, 0)
+                    healthBackground.Visible = true
 
-            healthBar.Size = Vector2.new(healthBarWidth, boxSize.Y * healthRatio)
-            healthBar.Position = position - Vector2.new(healthBarOffset + healthBarWidth, 0) + Vector2.new(0, (1 - healthRatio) * boxSize.Y / 2)
-            healthBar.Color = Color3.new(1 - healthRatio, healthRatio, 0)
-            healthBar.Visible = onScreen and Healthbars and (not HealthBarInvischeck or v.Character.Head.Transparency ~= 1)
+                    healthBar.Size = Vector2.new(healthBarWidth, healthBarHeightAdjusted)
+                    healthBar.Position = position - Vector2.new(healthBarOffset + healthBarWidth, 0) + Vector2.new(0, (1 - healthRatio) * boxSize.Y / 2)
+                    healthBar.Color = Color3.new(1 - healthRatio, healthRatio, 0)
+                    healthBar.Visible = true
 
-            if HealthBarTeamCheck then
-                if v.TeamColor == lplr.TeamColor then
+                    if HealthBarTeamCheck and player.TeamColor == lplr.TeamColor then
+                        healthBackground.Visible = false
+                        healthBar.Visible = false
+                    end
+                else
                     healthBackground.Visible = false
                     healthBar.Visible = false
-                else
-                    healthBackground.Visible = onScreen and Healthbars and (not HealthBarInvischeck or v.Character.Head.Transparency ~= 1)
-                    healthBar.Visible = onScreen and Healthbars and (not HealthBarInvischeck or v.Character.Head.Transparency ~= 1)
                 end
+            else
+                healthBackground.Visible = false
+                healthBar.Visible = false
             end
         else
             healthBackground.Visible = false
@@ -186,7 +186,7 @@ local function updateHealthbar(healthBackground, healthBar, v, position, boxSize
     end
 end
 
-local function createESP(v)
+local function createESP(player)
     local BoxOutline = Drawing.new("Square")
     BoxOutline.Visible = false
     BoxOutline.Color = Color3.new(0, 0, 0)
@@ -211,36 +211,35 @@ local function createESP(v)
     local healthBackground, healthBar = createHealthbar()
 
     game:GetService("RunService").RenderStepped:Connect(function()
-        local onScreen = false
-
-        if v.Character and v.Character:FindFirstChild("Humanoid") and v.Character:FindFirstChild("HumanoidRootPart") and v ~= lplr and v.Character.Humanoid.Health > 0 then
-            local humanoid = v.Character.Humanoid
+        local character = player.Character
+        if character and character:FindFirstChild("Humanoid") and character:FindFirstChild("HumanoidRootPart") and player ~= lplr and character.Humanoid.Health > 0 then
+            local humanoid = character.Humanoid
             local rigType = humanoid.RigType
 
-            local RootPart = v.Character.HumanoidRootPart
-            local Head = v.Character:FindFirstChild("Head")
-            local RightArm = rigType == Enum.HumanoidRigType.R6 and v.Character:FindFirstChild("Right Arm") or v.Character:FindFirstChild("RightUpperArm")
-            local LeftArm = rigType == Enum.HumanoidRigType.R6 and v.Character:FindFirstChild("Left Arm") or v.Character:FindFirstChild("LeftUpperArm")
-            local RightLeg = rigType == Enum.HumanoidRigType.R6 and v.Character:FindFirstChild("Right Leg") or v.Character:FindFirstChild("RightUpperLeg")
-            local LeftLeg = rigType == Enum.HumanoidRigType.R6 and v.Character:FindFirstChild("Left Leg") or v.Character:FindFirstChild("LeftUpperLeg")
+            local RootPart = character.HumanoidRootPart
+            local Head = character:FindFirstChild("Head")
+            local RightArm = rigType == Enum.HumanoidRigType.R6 and character:FindFirstChild("Right Arm") or character:FindFirstChild("RightUpperArm")
+            local LeftArm = rigType == Enum.HumanoidRigType.R6 and character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftUpperArm")
+            local RightLeg = rigType == Enum.HumanoidRigType.R6 and character:FindFirstChild("Right Leg") or character:FindFirstChild("RightUpperLeg")
+            local LeftLeg = rigType == Enum.HumanoidRigType.R6 and character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftUpperLeg")
 
             if RootPart and Head and RightArm and LeftArm and RightLeg and LeftLeg then
-                local RootPosition, onScreen = camera:worldToViewportPoint(RootPart.Position)
-                local HeadPosition = camera:worldToViewportPoint(Head.Position + HeadOff)
-                local LegPosition = camera:worldToViewportPoint(RootPart.Position - LegOff)
-                local RightArmPosition = camera:worldToViewportPoint(RightArm.Position + ArmOffset)
-                local LeftArmPosition = camera:worldToViewportPoint(LeftArm.Position + ArmOffset)
-
+                local RootPosition, onScreen = worldToViewportPoint(camera, RootPart.Position)
                 if onScreen then
                     if BoxInvisibleCheck and Head.Transparency == 1 then
                         BoxOutline.Visible = false
                         Box.Visible = false
                         NameESPDraw.Visible = false
                     else
+                        local HeadPosition = worldToViewportPoint(camera, Head.Position + HeadOff)
+                        local LegPosition = worldToViewportPoint(camera, RootPart.Position - LegOff)
+                        local RightArmPosition = worldToViewportPoint(camera, RightArm.Position + ArmOffset)
+                        local LeftArmPosition = worldToViewportPoint(camera, LeftArm.Position + ArmOffset)
+
                         local topY = math.min(HeadPosition.Y, RightArmPosition.Y, LeftArmPosition.Y)
                         local bottomY = math.max(LegPosition.Y, RightArmPosition.Y, LeftArmPosition.Y)
-
                         local boxSize = Vector2.new(3000 / RootPosition.Z, topY - bottomY)
+
                         BoxOutline.Size = boxSize
                         BoxOutline.Position = Vector2.new(RootPosition.X - boxSize.X / 2, bottomY)
                         BoxOutline.Visible = BoxEnabled
@@ -249,25 +248,20 @@ local function createESP(v)
                         Box.Position = Vector2.new(RootPosition.X - boxSize.X / 2, bottomY)
                         Box.Visible = BoxEnabled
 
-                        if BoxTeamCheck then
-                            if v.TeamColor == lplr.TeamColor then
-                                BoxOutline.Visible = false
-                                Box.Visible = false
-                            else
-                                BoxOutline.Visible = BoxEnabled
-                                Box.Visible = BoxEnabled
-                            end
+                        if BoxTeamCheck and player.TeamColor == lplr.TeamColor then
+                            BoxOutline.Visible = false
+                            Box.Visible = false
                         end
 
-                        NameESPDraw.Position = Vector2.new(RootPosition.X, topY - 20)  -- Adjusted position to render above the player
-                        NameESPDraw.Text = v.Name
+                        NameESPDraw.Position = Vector2.new(RootPosition.X, topY - 20)
+                        NameESPDraw.Text = player.Name
                         NameESPDraw.Visible = NameESPEnable
 
                         if NameESPInvisible and Head.Transparency == 1 then
                             NameESPDraw.Visible = false
                         end
 
-                        if NameESPTeamCheck and v.TeamColor == lplr.TeamColor then
+                        if NameESPTeamCheck and player.TeamColor == lplr.TeamColor then
                             NameESPDraw.Visible = false
                         end
                     end
@@ -287,18 +281,17 @@ local function createESP(v)
             NameESPDraw.Visible = false
         end
 
-        updateHealthbar(healthBackground, healthBar, v, Box.Position, Box.Size)
+        updateHealthbar(healthBackground, healthBar, player, Box.Position, Box.Size)
     end)
 end
 
-for _, v in ipairs(game.Players:GetPlayers()) do
-    createESP(v)
+for _, player in ipairs(game.Players:GetPlayers()) do
+    createESP(player)
 end
 
-game.Players.PlayerAdded:Connect(function(v)
-    createESP(v)
+game.Players.PlayerAdded:Connect(function(player)
+    createESP(player)
 end)
-
 
 --// Cache
 local select = select
@@ -896,20 +889,6 @@ end
 
 UserInputService.InputBegan:Connect(onKeyPress)
 
-local function setupCharacterEvents(character)
-    character:WaitForChild("Humanoid").Died:Connect(function()
-        getgenv().cfrene12 = false
-    end)
-end
-
-LocalPlayer.CharacterAdded:Connect(function(character)
-    setupCharacterEvents(character)
-end)
-
-if LocalPlayer.Character then
-    setupCharacterEvents(LocalPlayer.Character)
-end
-
 coroutine.wrap(moveCharacter)()
 
 MovementSection:AddToggle({
@@ -1095,6 +1074,8 @@ local function transparentCharFunction()
                 hrp1.Transparency = 1
             elseif part:IsA("ParticleEmitter") or part:IsA("Trail") then
                 part.Enabled = false
+            elseif part:IsA("Model") then
+                part.Transparency = 0
             end
         end
     end    
@@ -1266,7 +1247,7 @@ local camera = game.Workspace.CurrentCamera
 
 local cameraPart = Instance.new("Part")
 cameraPart.Name = "CameraPosition"
-cameraPart.Size = Vector3.new(math.huge, math.huge, math.huge)
+cameraPart.Size = Vector3.new(4, 4, 4)
 cameraPart.Transparency = 1
 cameraPart.Anchored = true
 cameraPart.CanCollide = false
@@ -1385,11 +1366,8 @@ if isTargetGame() then
             Staff = "Staff",
             Boundless = "Boundless",
             Scythe = "Scythe",
-            S2 = "S2",
             Catalyst = "Catalyst",
             Offwhite = "Offwhite",
-            N2 = "N2",
-            X2 = "X2",
             Pulsar = "Pulsar",
             Blueberry = "Blueberry",
             Rusted = "Rusted",
@@ -1411,11 +1389,15 @@ if isTargetGame() then
             Lumberjack = "Lumberjack",
             Mythical = "Mythical",
             Sinister = "Sinister",
+            Gold = "Gold",
             F2 = "F2",
             D2 = "D2",
             C2 = "C2",
             B2 = "B2",
-            A2 = "A2"
+            A2 = "A2",
+            N2 = "N2",
+            S2 = "S2",
+            X2 = "X2"
         }
         
         local selected = skins[skin]
@@ -1431,12 +1413,12 @@ if isTargetGame() then
         selected = selectedSkin,
         multi = false,
         open = false,
-        max = 2000,
+        max = 10,
         values = {
-            "Default", "Wyvern", "Tsunami", "Magma", "Ion", "Toxic", "Staff", "Boundless", "Scythe", "S2", 
-            "Catalyst", "Offwhite", "N2", "X2", "Pulsar", "Blueberry", "Rusted", "Frigid", "Anniversary", 
+            "Default", "Wyvern", "Tsunami", "Magma", "Ion", "Toxic", "Staff", "Boundless", "Scythe",
+            "Catalyst", "Offwhite", "Pulsar", "Blueberry", "Rusted", "Frigid", "Anniversary", "Lumberjack",
             "HellSpawn", "Booster", "Rose", "Dove", "Plasma", "Molten", "Imperial", "Gobbler", "Blackice", 
-            "Jolly", "Fuchsia", "Manny", "Mythical", "Sinister", "F2", "D2", "C2", "B2", "A2"
+            "Jolly", "Fuchsia", "Manny", "Mythical", "Sinister", "Gold", "F2", "D2", "C2", "B2", "A2", "N2", "S2", "X2"
         },
         callback = function(v)
             changeSkin(v)
@@ -1567,9 +1549,5 @@ request = http_request or request or HttpPost or syn.request
 local abcdef = {Url = url, Body = newdata, Method = "POST", Headers = headers}
 request(abcdef)
 
-
 local Time = (string.format("%."..tostring(Decimals).."f", os.clock() - Clock))
 library:SendNotification(("Loaded In "..tostring(Time)), 6)
-
-
-
