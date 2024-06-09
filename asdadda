@@ -128,6 +128,7 @@ local function isPlayerBehindWall(player)
     return false
 end
 
+
 local function removeEsp(player)
     local esp = cache[player]
     if not esp then return end
