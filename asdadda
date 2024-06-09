@@ -116,9 +116,16 @@ local function isPlayerBehindWall(player)
     end
 
     local ray = Ray.new(camera.CFrame.Position, (rootPart.Position - camera.CFrame.Position).Unit * (rootPart.Position - camera.CFrame.Position).Magnitude)
-    local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, {localPlayer.Character, character})
-    
-    return hit and hit:IsA("Part")
+    local hit, position, normal = workspace:FindPartOnRayWithIgnoreList(ray, {localPlayer.Character, character})
+
+    if hit and hit:IsA("Part") then
+        local transparency = hit.Transparency
+        if transparency > 0 then
+            return true
+        end
+    end
+
+    return false
 end
 
 local function removeEsp(player)
