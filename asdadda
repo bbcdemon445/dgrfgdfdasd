@@ -104,7 +104,14 @@ local function createEsp(player)
     cache[player]["skeletonlines"] = {}
 end
 
+local lastRaycastTime = 0
+local raycastCooldown = 1 -- 1 second cooldown between raycasts
+
 local function isPlayerBehindWall(player)
+    if tick() - lastRaycastTime < raycastCooldown then
+        return false -- Too soon for another raycast
+    end
+    
     local character = player.Character
     if not character then
         return false
@@ -115,19 +122,24 @@ local function isPlayerBehindWall(player)
         return false
     end
 
-    local targetPosition = rootPart.Position
+    local rayDirection = (rootPart.Position - camera.CFrame.Position).Unit
+    local ray = Ray.new(camera.CFrame.Position, rayDirection * (rootPart.Position - camera.CFrame.Position).Magnitude)
 
-    local parts = camera:GetPartsObscuringTarget({targetPosition}, {localPlayer.Character, character})
+    local ignoreList = {localPlayer.Character, character}
 
-    for _, part in ipairs(parts) do
-        if part.Transparency > 0 then
-            return false
+    -- Add parts with transparency greater than 0 to the ignore list
+    for _, part in ipairs(workspace:GetDescendants()) do
+        if part:IsA("BasePart") and part.Transparency > 0 then
+            table.insert(ignoreList, part)
         end
     end
 
-    return #parts > 0
+    local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
+    
+    lastRaycastTime = tick() -- Update last raycast time
+    
+    return hit and hit:IsA("Part")
 end
-
 
 local function removeEsp(player)
     local esp = cache[player]
