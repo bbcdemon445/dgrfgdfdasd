@@ -104,40 +104,31 @@ local function createEsp(player)
     cache[player]["skeletonlines"] = {}
 end
 
-local wallCache = {}
+local camera = game.Workspace.CurrentCamera
+local localPlayer = game.Players.LocalPlayer
 
 local function isPlayerBehindWall(player)
-    local cachedResult = wallCache[player]
-    if cachedResult ~= nil then
-        return cachedResult
-    end
-
     local character = player.Character
     if not character then
-        wallCache[player] = false
         return false
     end
 
     local rootPart = character:FindFirstChild("HumanoidRootPart")
     if not rootPart then
-        wallCache[player] = false
         return false
     end
 
-    local rayDirection = (rootPart.Position - camera.CFrame.Position).Unit
-    local ray = Ray.new(camera.CFrame.Position, rayDirection * (rootPart.Position - camera.CFrame.Position).Magnitude)
-    local hit, _, _, material = workspace:FindPartOnRayWithMaterialAndIgnoreList(ray, {localPlayer.Character, character}, nil, 1)
+    local ray = Ray.new(camera.CFrame.Position, (rootPart.Position - camera.CFrame.Position).Unit * (rootPart.Position - camera.CFrame.Position).Magnitude)
+    local hit, position, normal = workspace:FindPartOnRayWithIgnoreList(ray, {localPlayer.Character, character})
 
-    local result = false
     if hit and hit:IsA("Part") then
         local transparency = hit.Transparency
         if transparency > 0.05 then
-            result = true
+            return true
         end
     end
 
-    wallCache[player] = result
-    return result
+    return false
 end
 
 local function removeEsp(player)
