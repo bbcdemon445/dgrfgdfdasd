@@ -115,22 +115,19 @@ local function isPlayerBehindWall(player)
         return false
     end
 
-    local rayDirection = (rootPart.Position - camera.CFrame.Position).Unit
-    local ray = Ray.new(camera.CFrame.Position, rayDirection * (rootPart.Position - camera.CFrame.Position).Magnitude)
+    local targetPosition = rootPart.Position
 
-    local ignoreList = {localPlayer.Character, character}
+    local parts = camera:GetPartsObscuringTarget({targetPosition}, {localPlayer.Character, character})
 
-    -- Add parts with transparency greater than 0 to the ignore list
-    for _, part in ipairs(workspace:GetDescendants()) do
-        if part:IsA("BasePart") and part.Transparency > 0 then
-            table.insert(ignoreList, part)
+    for _, part in ipairs(parts) do
+        if part.Transparency > 0 then
+            return false
         end
     end
 
-    local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
-    
-    return hit and hit:IsA("Part")
+    return #parts > 0
 end
+
 
 local function removeEsp(player)
     local esp = cache[player]
