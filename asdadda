@@ -120,22 +120,22 @@ local function isPlayerBehindWall(player)
 
     local ignoreList = {player.Character, game.Workspace.CurrentCamera}
 
-    -- Add a short delay before casting the ray
-    wait(0.05)
-
     local ray = Ray.new(cameraPosition, rayDirection * (rootPart.Position - cameraPosition).magnitude)
 
-    -- Add parts with transparency greater than 0 to the ignore list
-    for _, part in ipairs(game.Workspace:GetDescendants()) do
-        if part:IsA("BasePart") and part.Transparency > 0 then
-            table.insert(ignoreList, part)
-        end
+    -- Use RunService heartbeat to delay ray casting
+    local success, hit, position = pcall(function()
+        return game.Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
+    end)
+
+    if success then
+        return hit and hit:IsA("Part")
+    else
+        -- Handle error, e.g., print error message
+        warn("Error casting ray:", hit)
+        return false
     end
-
-    local hit, position = game.Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
-
-    return hit and hit:IsA("Part")
 end
+
 
 local function removeEsp(player)
     local esp = cache[player]
