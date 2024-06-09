@@ -117,6 +117,10 @@ local function isPlayerBehindWall(player)
 
     local cameraPosition = game.Workspace.CurrentCamera.CFrame.Position
     local rayDirection = (rootPart.Position - cameraPosition).unit
+    
+    -- Add a short delay to allow for position updates
+    wait(0.05)
+
     local ray = Ray.new(cameraPosition, rayDirection * (rootPart.Position - cameraPosition).magnitude)
 
     local ignoreList = {player.Character, game.Workspace.CurrentCamera}
@@ -132,6 +136,7 @@ local function isPlayerBehindWall(player)
 
     return hit and hit:IsA("Part")
 end
+
 
 
 local function removeEsp(player)
