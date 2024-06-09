@@ -120,7 +120,7 @@ local function isPlayerBehindWall(player)
 
     if hit and hit:IsA("Part") then
         local transparency = hit.Transparency
-        if transparency > 0.9 then
+        if transparency > 0 then
             return true
         end
     end
