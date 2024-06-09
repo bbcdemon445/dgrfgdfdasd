@@ -117,13 +117,13 @@ local function isPlayerBehindWall(player)
 
     local cameraPosition = game.Workspace.CurrentCamera.CFrame.Position
     local rayDirection = (rootPart.Position - cameraPosition).unit
-    
-    -- Add a short delay to allow for position updates
+
+    local ignoreList = {player.Character, game.Workspace.CurrentCamera}
+
+    -- Add a short delay before casting the ray
     wait(0.05)
 
     local ray = Ray.new(cameraPosition, rayDirection * (rootPart.Position - cameraPosition).magnitude)
-
-    local ignoreList = {player.Character, game.Workspace.CurrentCamera}
 
     -- Add parts with transparency greater than 0 to the ignore list
     for _, part in ipairs(game.Workspace:GetDescendants()) do
@@ -136,8 +136,6 @@ local function isPlayerBehindWall(player)
 
     return hit and hit:IsA("Part")
 end
-
-
 
 local function removeEsp(player)
     local esp = cache[player]
