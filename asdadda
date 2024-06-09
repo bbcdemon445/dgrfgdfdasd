@@ -114,28 +114,30 @@ local function isPlayerBehindWall(player)
     if not rootPart then
         return false
     end
-
-    local cameraPosition = game.Workspace.CurrentCamera.CFrame.Position
+    
+    local camera = game.Workspace.CurrentCamera
+    local cameraPosition = camera.CFrame.Position
     local rayDirection = (rootPart.Position - cameraPosition).unit
-
-    local ignoreList = {player.Character, game.Workspace.CurrentCamera}
 
     local ray = Ray.new(cameraPosition, rayDirection * (rootPart.Position - cameraPosition).magnitude)
 
-    -- Use RunService heartbeat to delay ray casting
-    local success, hit, position = pcall(function()
-        return game.Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
-    end)
+    local ignoreList = {player.Character, camera}
 
-    if success then
-        return hit and hit:IsA("Part")
-    else
-        -- Handle error, e.g., print error message
-        warn("Error casting ray:", hit)
-        return false
+    -- Limit the search to parts within a certain distance from the camera
+    local maxDistance = (rootPart.Position - cameraPosition).magnitude + 5 -- Add some buffer
+    local partsToCheck = game.Workspace:FindPartsInRegion3WithIgnoreList(
+        Region3.new(cameraPosition - Vector3.new(maxDistance, maxDistance, maxDistance), 
+                    cameraPosition + Vector3.new(maxDistance, maxDistance, maxDistance)), 
+        ignoreList, math.huge)
+
+    for _, part in ipairs(partsToCheck) do
+        if part:IsA("BasePart") and part.Transparency > 0 then
+            return true
+        end
     end
-end
 
+    return false
+end
 
 local function removeEsp(player)
     local esp = cache[player]
