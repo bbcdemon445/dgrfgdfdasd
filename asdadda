@@ -107,7 +107,7 @@ end
 local lastRaycastTime = 0
 local raycastCooldown = 1 -- 1 second cooldown between raycasts
 
-local function isPlayerBehindWall(player)
+local function isPlayerBehindWall(player, camera, localPlayer, workspace)
     if tick() - lastRaycastTime < raycastCooldown then
         return false -- Too soon for another raycast
     end
@@ -140,6 +140,7 @@ local function isPlayerBehindWall(player)
     
     return hit and hit:IsA("Part")
 end
+
 
 local function removeEsp(player)
     local esp = cache[player]
