@@ -104,7 +104,7 @@ local function createEsp(player)
     cache[player]["skeletonlines"] = {}
 end
 
-local function isPlayerBehindWall(player, camera)
+local function isPlayerBehindWall(player)
     local character = player.Character
     if not character then
         return false
@@ -115,23 +115,24 @@ local function isPlayerBehindWall(player, camera)
         return false
     end
 
-    local cameraPosition = camera.CFrame.Position
+    local cameraPosition = game.Workspace.CurrentCamera.CFrame.Position
     local rayDirection = (rootPart.Position - cameraPosition).unit
     local ray = Ray.new(cameraPosition, rayDirection * (rootPart.Position - cameraPosition).magnitude)
 
-    local ignoreList = {player.Character}
+    local ignoreList = {player.Character, game.Workspace.CurrentCamera}
 
     -- Add parts with transparency greater than 0 to the ignore list
-    for _, part in ipairs(workspace:GetDescendants()) do
+    for _, part in ipairs(game.Workspace:GetDescendants()) do
         if part:IsA("BasePart") and part.Transparency > 0 then
             table.insert(ignoreList, part)
         end
     end
 
-    local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
+    local hit, position = game.Workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
 
     return hit and hit:IsA("Part")
 end
+
 
 local function removeEsp(player)
     local esp = cache[player]
