@@ -122,7 +122,7 @@ local function isPlayerBehindWall(player)
 
     -- Add parts with transparency greater than 0 to the ignore list
     for _, part in ipairs(workspace:GetDescendants()) do
-        if part:IsA("BasePart") and part.Transparency > 0 then
+        if part:IsA("BasePart") and part.Transparency > 0.05 then
             table.insert(ignoreList, part)
         end
     end
