@@ -150,11 +150,6 @@ local function isPlayerBehindWall(player)
     return result and result.Instance:IsA("BasePart")
 end
 
--- Example usage
-local player = Players:GetPlayerFromCharacter(workspace:WaitForChild("SomePlayerCharacter"))
-local behindWall = isPlayer
-
-
 local function removeEsp(player)
     local esp = cache[player]
     if not esp then return end
