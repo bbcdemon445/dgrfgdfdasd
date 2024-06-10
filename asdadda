@@ -116,35 +116,45 @@ raycastParams.IgnoreWater = true
 
 -- Initial ignore list
 local ignoreList = {localPlayer.Character}
+local transparentParts = {}
 
 -- Function to update the ignore list
-local function updateIgnoreList(character)
-    ignoreList = {localPlayer.Character, character}
-    for _, part in ipairs(workspace:GetDescendants()) do
-        if part:IsA("BasePart") and part.Transparency > 0 then
-            table.insert(ignoreList, part)
-        end
+local function updateIgnoreList()
+    ignoreList = {localPlayer.Character}
+    for _, part in ipairs(transparentParts) do
+        table.insert(ignoreList, part)
     end
     raycastParams.FilterDescendantsInstances = ignoreList
 end
 
--- Update ignore list initially
-updateIgnoreList()
+-- Function to update transparent parts cache
+local function cacheTransparentParts()
+    transparentParts = {}
+    for _, part in ipairs(workspace:GetDescendants()) do
+        if part:IsA("BasePart") and part.Transparency > 0 then
+            table.insert(transparentParts, part)
+        end
+    end
+    updateIgnoreList()
+end
 
--- Listen to descendants being added or removed to update the ignore list
+-- Update transparent parts cache initially
+cacheTransparentParts()
+
+-- Listen to descendants being added or removed to update the cache
 workspace.DescendantAdded:Connect(function(descendant)
     if descendant:IsA("BasePart") and descendant.Transparency > 0 then
-        table.insert(ignoreList, descendant)
-        raycastParams.FilterDescendantsInstances = ignoreList
+        table.insert(transparentParts, descendant)
+        updateIgnoreList()
     end
 end)
 
 workspace.DescendantRemoving:Connect(function(descendant)
     if descendant:IsA("BasePart") and descendant.Transparency > 0 then
-        for i, part in ipairs(ignoreList) do
+        for i, part in ipairs(transparentParts) do
             if part == descendant then
-                table.remove(ignoreList, i)
-                raycastParams.FilterDescendantsInstances = ignoreList
+                table.remove(transparentParts, i)
+                updateIgnoreList()
                 break
             end
         end
@@ -153,20 +163,23 @@ end)
 
 local function isPlayerBehindWall(player)
     local character = player.Character
-    if not character then
+    if not character or not character:FindFirstChild("HumanoidRootPart") then
         return false
     end
 
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then
+    -- Skip dead characters
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if humanoid and humanoid.Health <= 0 then
         return false
     end
 
-    -- Update the ignore list with the current player's character
-    updateIgnoreList(character)
-
+    local rootPart = character.HumanoidRootPart
     local rayOrigin = camera.CFrame.Position
     local rayDirection = (rootPart.Position - rayOrigin).Unit * (rootPart.Position - rayOrigin).Magnitude
+
+    -- Update the ignore list with the current player's character
+    ignoreList[2] = character
+    raycastParams.FilterDescendantsInstances = ignoreList
 
     -- Perform the raycast
     local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
@@ -200,7 +213,7 @@ local function updateEsp()
                     local hrp2D = camera:WorldToViewportPoint(rootPart.Position)
                     local charSize = (camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0)).Y - camera:WorldToViewportPoint(rootPart.Position + Vector3.new(0, 2.6, 0)).Y) / 2
                     local boxSize = Vector2.new(math.floor(charSize * 1.3), math.floor(charSize * 1.9))
-                    local boxPosition = Vector2.new(math.floor(hrp2D.X - charSize * 1.3 / 2), math.floor(hrp2D.Y - charSize * 1.6 / 2))
+                    local boxPosition = Vector2.new(math.floor(hrp2D.X - charSize * 1.3 / 2), math.floor(hrp2D.Y - charSize * 1.9 / 2))
 
                     if ESP_SETTINGS.ShowName and ESP_SETTINGS.Enabled then
                         esp.name.Visible = true
