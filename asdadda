@@ -104,14 +104,7 @@ local function createEsp(player)
     cache[player]["skeletonlines"] = {}
 end
 
-local lastRaycastTime = 0
-local raycastCooldown = 1 -- 1 second cooldown between raycasts
-
-local function isPlayerBehindWall(player, camera, localPlayer, workspace)
-    if tick() - lastRaycastTime < raycastCooldown then
-        return false -- Too soon for another raycast
-    end
-    
+local function isPlayerBehindWall(player)
     local character = player.Character
     if not character then
         return false
@@ -136,11 +129,8 @@ local function isPlayerBehindWall(player, camera, localPlayer, workspace)
 
     local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
     
-    lastRaycastTime = tick() -- Update last raycast time
-    
     return hit and hit:IsA("Part")
 end
-
 
 local function removeEsp(player)
     local esp = cache[player]
