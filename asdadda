@@ -114,9 +114,12 @@ local raycastParams = RaycastParams.new()
 raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
 raycastParams.IgnoreWater = true
 
+-- Initial ignore list
+local ignoreList = {localPlayer.Character}
+
 -- Function to update the ignore list
-local function updateIgnoreList(character)
-    local ignoreList = {localPlayer.Character, character}
+local function updateIgnoreList()
+    ignoreList = {localPlayer.Character}
     for _, part in ipairs(workspace:GetDescendants()) do
         if part:IsA("BasePart") and part.Transparency > 0 then
             table.insert(ignoreList, part)
@@ -124,6 +127,29 @@ local function updateIgnoreList(character)
     end
     raycastParams.FilterDescendantsInstances = ignoreList
 end
+
+-- Update ignore list initially
+updateIgnoreList()
+
+-- Listen to descendants being added or removed to update the ignore list
+workspace.DescendantAdded:Connect(function(descendant)
+    if descendant:IsA("BasePart") and descendant.Transparency > 0 then
+        table.insert(ignoreList, descendant)
+        raycastParams.FilterDescendantsInstances = ignoreList
+    end
+end)
+
+workspace.DescendantRemoving:Connect(function(descendant)
+    if descendant:IsA("BasePart") and descendant.Transparency > 0 then
+        for i, part in ipairs(ignoreList) do
+            if part == descendant then
+                table.remove(ignoreList, i)
+                raycastParams.FilterDescendantsInstances = ignoreList
+                break
+            end
+        end
+    end
+end)
 
 local function isPlayerBehindWall(player)
     local character = player.Character
@@ -139,14 +165,12 @@ local function isPlayerBehindWall(player)
     local rayOrigin = camera.CFrame.Position
     local rayDirection = (rootPart.Position - rayOrigin).Unit * (rootPart.Position - rayOrigin).Magnitude
 
-    -- Update the ignore list with the current player's character
-    updateIgnoreList(character)
-    
     -- Perform the raycast
     local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
 
     return result and result.Instance:IsA("BasePart")
 end
+
 
 local function removeEsp(player)
     local esp = cache[player]
