@@ -118,8 +118,8 @@ raycastParams.IgnoreWater = true
 local ignoreList = {localPlayer.Character}
 
 -- Function to update the ignore list
-local function updateIgnoreList()
-    ignoreList = {localPlayer.Character}
+local function updateIgnoreList(character)
+    ignoreList = {localPlayer.Character, character}
     for _, part in ipairs(workspace:GetDescendants()) do
         if part:IsA("BasePart") and part.Transparency > 0 then
             table.insert(ignoreList, part)
@@ -162,6 +162,9 @@ local function isPlayerBehindWall(player)
         return false
     end
 
+    -- Update the ignore list with the current player's character
+    updateIgnoreList(character)
+
     local rayOrigin = camera.CFrame.Position
     local rayDirection = (rootPart.Position - rayOrigin).Unit * (rootPart.Position - rayOrigin).Magnitude
 
@@ -170,7 +173,6 @@ local function isPlayerBehindWall(player)
 
     return result and result.Instance:IsA("BasePart")
 end
-
 
 local function removeEsp(player)
     local esp = cache[player]
