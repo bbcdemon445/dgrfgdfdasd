@@ -192,9 +192,10 @@ local function removeEsp(player)
     if not esp then return end
 
     for _, drawing in pairs(esp) do
-        if player.Character and player.Character:FindFirstChild("Head") then
-            local headTransparency = player.Character.Head.Transparency
-            if headTransparency == 1 or player.Health == 0 then
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local humanoid = player.Character.Humanoid
+            local headTransparency = player.Character:FindFirstChild("Head") and player.Character.Head.Transparency or 0
+            if headTransparency == 1 or humanoid.Health <= 0 then
                 drawing:Remove()
             end
         end
