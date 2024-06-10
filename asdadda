@@ -114,9 +114,9 @@ local raycastParams = RaycastParams.new()
 raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
 raycastParams.IgnoreWater = true
 
--- Cache the initial ignore list
-local function updateIgnoreList()
-    local ignoreList = {localPlayer.Character}
+-- Function to update the ignore list
+local function updateIgnoreList(character)
+    local ignoreList = {localPlayer.Character, character}
     for _, part in ipairs(workspace:GetDescendants()) do
         if part:IsA("BasePart") and part.Transparency > 0 then
             table.insert(ignoreList, part)
@@ -124,9 +124,6 @@ local function updateIgnoreList()
     end
     raycastParams.FilterDescendantsInstances = ignoreList
 end
-
--- Update ignore list initially and whenever necessary
-updateIgnoreList()
 
 local function isPlayerBehindWall(player)
     local character = player.Character
@@ -139,13 +136,14 @@ local function isPlayerBehindWall(player)
         return false
     end
 
-    local rayDirection = (rootPart.Position - camera.CFrame.Position).Unit
-    local rayLength = (rootPart.Position - camera.CFrame.Position).Magnitude
+    local rayOrigin = camera.CFrame.Position
+    local rayDirection = (rootPart.Position - rayOrigin).Unit * (rootPart.Position - rayOrigin).Magnitude
 
-    raycastParams.FilterDescendantsInstances = {localPlayer.Character, character}
+    -- Update the ignore list with the current player's character
+    updateIgnoreList(character)
     
-    -- Check if the player is behind a wall
-    local result = workspace:Raycast(camera.CFrame.Position, rayDirection * rayLength, raycastParams)
+    -- Perform the raycast
+    local result = workspace:Raycast(rayOrigin, rayDirection, raycastParams)
 
     return result and result.Instance:IsA("BasePart")
 end
