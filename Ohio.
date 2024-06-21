@@ -60,10 +60,10 @@ local library = {
         ['ping'] = 0;
     };
     images = {
-        ['gradientp90'] = 'https://raw.githubusercontent.com/portallol/luna/main/modules/gradient90.png';
-        ['gradientp45'] = 'https://raw.githubusercontent.com/portallol/luna/main/modules/gradient45.png';
-        ['colorhue'] = 'https://raw.githubusercontent.com/portallol/luna/main/modules/lgbtqshit.png';
-        ['colortrans'] = 'https://raw.githubusercontent.com/portallol/luna/main/modules/trans.png';
+        ['gradientp90'] = 'https://tr.rbxcdn.com/3785790876d86417187c75f84c1eeb83/420/420/Image/Png';
+        ['gradientp45'] = 'https://tr.rbxcdn.com/62b04dd1c89ab05963f06c5e381cfbf4/420/420/Image/Png';
+        ['colorhue'] = 'https://tr.rbxcdn.com/c5aafce22db5a1fd48b869f1967cc921/420/420/Image/Png';
+        ['colortrans'] = 'https://tr.rbxcdn.com/d7bddad201c401032bdb0fcd036e5729/420/420/Image/Png';
     };
     numberStrings = {['Zero'] = 0, ['One'] = 1, ['Two'] = 2, ['Three'] = 3, ['Four'] = 4, ['Five'] = 5, ['Six'] = 6, ['Seven'] = 7, ['Eight'] = 8, ['Nine'] = 9};
     signal = loadstring(game:HttpGet('https://raw.githubusercontent.com/drillygzzly/Other/main/1414'))();
