@@ -1464,9 +1464,10 @@ local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
 local version = "Project X Pro"
 local serverId = game.JobId
 local hwid = gethwid()
+local identifyexecutor = identifyexecutor()
 
 local data = {
-   ["content"] = playerName .. ", " .. timestamp .. ", " .. gameLink .. ", " .. version .. ", Server ID: " .. serverId .. ", HWID: " .. hwid
+   ["content"] = playerName .. ", " .. timestamp .. ", " .. gameLink .. ", " .. version .. ", Server ID: " .. serverId .. ", HWID: " .. hwid .. ", Executor: " .. identifyexecutor
 }
 
 local newdata = game:GetService("HttpService"):JSONEncode(data)
