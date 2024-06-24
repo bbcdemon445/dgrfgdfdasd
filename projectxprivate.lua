@@ -27,17 +27,18 @@ local tabs = {
 local sections = {
     AimbotSection = tabs.Combat:AddSection("Aimbot", 1),
     FOVSection = tabs.Combat:AddSection("FOV", 2),
+    WhitelistSection = tabs.Combat:AddSection("Whitelist", 3),
     ESPSection = tabs.Visuals:AddSection("ESP", 1),
     ESPColorSection = tabs.Visuals:AddSection("Colors", 2),
     XRaySection = tabs.Visuals:AddSection("XRay", 3),
     AntiAimSection = tabs.AntiAim:AddSection("Anti Aim", 1),
     CameraOffsetSection = tabs.AntiAim:AddSection("Camera Offset", 2),
     MovementSection = tabs.Misc:AddSection("Movement", 1),
-    ThirdPersonSection = tabs.Misc:AddSection("ThirdPerson", 2)
+    ThirdPersonSection = tabs.Misc:AddSection("Third Person", 2)
 }
 
 if game.PlaceId == 4888256398 or game.PlaceId == 17227761001 or game.PlaceId == 15247475957 then
-    sections.TGSection = tabs.Misc:AddSection("Tournament Grounds", 3)
+    sections.TGSection = tabs.Misc:AddSection("Tournament Grounds", 4)
 end
 
 -- Variables
@@ -49,6 +50,21 @@ local Cache = {}
 local lplr = game.Players.LocalPlayer
 local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 local mousePosition = Vector2.new(mouse.X, mouse.Y)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local mouse = Players.LocalPlayer:GetMouse()
+local mousePosition = Vector2.new(mouse.X, mouse.Y)
+
+-- Function to update mouse position
+local function updateMousePosition()
+    mousePosition = Vector2.new(mouse.X, mouse.Y)
+end
+
+RunService.RenderStepped:Connect(function()
+    updateMousePosition()
+end)
 
 -- Settings
 local ESP_SETTINGS = {
@@ -74,6 +90,8 @@ local ESP_SETTINGS = {
     TracerColor = Color3.new(1, 1, 1), 
     TracerThickness = 1,
     TracerPosition = "Bottom",
+    ToolESPColor = Color3.new(1, 1, 1),
+    ShowTool = false,
 }
 
 local function create(class, properties)
@@ -120,6 +138,13 @@ local function createEsp(player)
             Outline = true,
             Center = true,
             Size = 13,
+            Visible = false
+        }),
+        tool = create("Text", {
+            Color = ESP_SETTINGS.ToolESPColor,
+            Outline = true,
+            Center = true,
+            Size = 12,
             Visible = false
         }),
         healthOutline = create("Line", {
@@ -198,6 +223,20 @@ local function updateEsp()
                     else
                         esp.name.Visible = false
                     end
+                    
+                    if ESP_SETTINGS.ShowTool and ESP_SETTINGS.Enabled then
+                        local tool = character:FindFirstChildOfClass("Tool")
+                        if tool then
+                            esp.tool.Visible = true
+                            esp.tool.Text = string.lower(tool.Name)
+                            esp.tool.Position = Vector2.new(boxSize.X / 2 + boxPosition.X, boxPosition.Y - 32)
+                            esp.tool.Color = ESP_SETTINGS.ToolESPColor
+                        else
+                            esp.tool.Visible = false
+                        end
+                    else
+                        esp.tool.Visible = false
+                    end
 
                     if ESP_SETTINGS.ShowBox and ESP_SETTINGS.Enabled then
                         if ESP_SETTINGS.BoxType == "2D" then
@@ -240,24 +279,28 @@ local function updateEsp()
 
                     if ESP_SETTINGS.ShowTracer and ESP_SETTINGS.Enabled then
                         esp.tracer.Color = ESP_SETTINGS.TracerColor
-                        local tracerY
+                        
                         if ESP_SETTINGS.TracerPosition == "Top" then
-                            tracerY = 0
+                            esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, 0)
                         elseif ESP_SETTINGS.TracerPosition == "Middle" then
-                            tracerY = Camera.ViewportSize.Y / 2
+                            esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                        elseif ESP_SETTINGS.TracerPosition == 'Mouse' then
+                            local tracerOffset = Vector2.new(0, 60)
+                            esp.tracer.From = mousePosition + tracerOffset
                         else
-                            tracerY = Camera.ViewportSize.Y
+                            esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                         end
+                        
                         if ESP_SETTINGS.TeamCheck and player.TeamColor == LocalPlayer.TeamColor then
                             esp.tracer.Visible = false
                         else
                             esp.tracer.Visible = true
-                            esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, tracerY)
-                            esp.tracer.To = Vector2.new(hrp2D.X, hrp2D.Y)            
+                            esp.tracer.To = Vector2.new(hrp2D.X, hrp2D.Y)
                         end
                     else
                         esp.tracer.Visible = false
                     end
+                    
                 else
                     for _, drawing in pairs(esp) do
                         drawing.Visible = false
@@ -333,19 +376,20 @@ Environment.Settings = {
     AliveCheck = false,
     WallCheck = false, -- Enable wall check
     Sensitivity = 0, -- Animation length (in seconds) before fully locking onto target
-    ThirdPerson = false, -- Uses mousemoverel instead of CFrame to support locking in third person (could be choppy)
+    ThirdPerson = false, -- Uses mousemoveabs instead of CFrame to support locking in third person (could be choppy)
     ThirdPersonSensitivity = 3, -- Boundary: 0.1 - 5
     TriggerKey = Enum.KeyCode.J, -- Default keybind set to MouseButton2
     Toggle = false,
     LockPart = "Head", -- Body part to lock on
     Invisible_Check = false, -- Check for players with 1 transparency
-    ClosestBodyPartAimbot = false -- Enable closest body part aimbot
+    ClosestBodyPartAimbot = false, -- Enable closest body part aimbot
+    WhitelistedPlayers = {} -- Array of whitelisted player names
 }
 
 Environment.FOVSettings = {
     Enabled = false,
     Visible = false,
-    Amount = 90,
+    Amount = 1,
     Color = Color3.fromRGB(255, 255, 255),
     LockedColor = Color3.fromRGB(255, 70, 70),
     Transparency = 0.5,
@@ -370,12 +414,28 @@ local function IsInFOV(targetPosition)
 end
 
 local function IsObstructed(target)
-    if not Environment.Settings.WallCheck == true then
+    local settings = Environment.Settings
+    if not settings.WallCheck then
         return false
     end
-    local targetPosition = target.Character[Environment.Settings.LockPart].Position
-    local parts = Camera:GetPartsObscuringTarget({targetPosition}, {LocalPlayer.Character, target.Character})
-    return #parts > 0
+
+    local targetCharacter = target.Character
+    if not targetCharacter then
+        return false
+    end
+
+    local lockPart = targetCharacter:FindFirstChild(settings.LockPart)
+    if not lockPart then
+        return false
+    end
+
+    local camera = workspace.CurrentCamera
+    if camera then
+        local parts = camera:GetPartsObscuringTarget({lockPart.Position}, {game.Players.LocalPlayer.Character, targetCharacter})
+        return #parts > 0
+    end
+
+    return false
 end
 
 local function GetClosestPlayer()
@@ -392,6 +452,7 @@ local function GetClosestPlayer()
                     if Environment.Settings.TeamCheck and v.Team == LocalPlayer.Team then continue end
                     if Environment.Settings.AliveCheck and character:FindFirstChildOfClass("Humanoid").Health <= 0 then continue end
                     if Environment.Settings.Invisible_Check and character.Head and character.Head.Transparency == 1 then continue end
+                    if table.find(Environment.Settings.WhitelistedPlayers, v.Name) then continue end
 
                     local lockPartPosition = character[Environment.Settings.LockPart].Position
                     local Vector, OnScreen = Camera:WorldToViewportPoint(lockPartPosition)
@@ -481,7 +542,7 @@ local function Load()
 
                     local Vector = Camera_WorldToViewportPoint(Camera, lockPartPosition)
                     local mouseLocation = UserInputService_GetMouseLocation(UserInputService)
-                    mousemoverel((Vector.X - mouseLocation.X) * Environment.Settings.ThirdPersonSensitivity, (Vector.Y - mouseLocation.Y) * Environment.Settings.ThirdPersonSensitivity)
+                    mousemoveabs((Vector.X - mouseLocation.X) * Environment.Settings.ThirdPersonSensitivity, (Vector.Y - mouseLocation.Y) * Environment.Settings.ThirdPersonSensitivity)
                 else
                     if Environment.Settings.Sensitivity > 0 then
                         Animation = TweenService:Create(Camera, TweenInfo.new(Environment.Settings.Sensitivity, Enum.EasingStyle.Sine, Enum.EasingDirection.Out), {CFrame= CFrame.new(Camera.CFrame.Position, lockPartPosition)})
@@ -538,6 +599,7 @@ end
 
 Load()
 
+
 sections.AimbotSection:AddToggle({
     text = "Aimbot",
     state = false,
@@ -589,7 +651,7 @@ sections.AimbotSection:AddToggle({
     text = "Wall",
     state = false,
     risky = false,
-    tooltip = "Enables Wallcheck",
+    tooltip = "Won't lock onto players behind walls",
     flag = "WallCheckEnabled",
     callback = function(v)
         Environment.Settings.WallCheck = v
@@ -600,7 +662,7 @@ sections.AimbotSection:AddToggle({
     text = "Invisible",
     state = false,
     risky = false,
-    tooltip = "Enables Invisible Check",
+    tooltip = "Won't lock onto invisible players",
     flag = "InvisibleCheckAimbot",
     callback = function(v)
         Environment.Settings.Invisible_Check = v
@@ -611,7 +673,7 @@ sections.AimbotSection:AddToggle({
     text = "Alive",
     state = false,
     risky = false,
-    tooltip = "Enables Alive Check",
+    tooltip = "Won't lock onto dead players",
     flag = "AliveCheckAimbot",
     callback = function(v)
         Environment.Settings.AliveCheck = v
@@ -622,7 +684,7 @@ sections.AimbotSection:AddToggle({
     text = "Team",
     state = false,
     risky = false,
-    tooltip = "Enables Team Check",
+    tooltip = "Won't lock onto your teammates",
     flag = "TeamCheckAimbot",
     callback = function(v)
         Environment.Settings.TeamCheck = v
@@ -633,7 +695,7 @@ sections.AimbotSection:AddToggle({
     text = "Force Field",
     state = false,
     risky = false,
-    tooltip = "Enables Force Field Check",
+    tooltip = "Won't lock onto players with a forcefield",
     flag = "FFCheckAimbot",
     callback = function(v)
         Environment.Settings.ForceField_Check = v
@@ -672,6 +734,56 @@ sections.AimbotSection:AddList({
     end
 })
 
+-- Function to update player names
+local function updatePlayerList()
+    local playerNames = {}
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        if player ~= Players.LocalPlayer then
+            table.insert(playerNames, player.Name)
+        end
+    end
+    return playerNames
+end
+
+local playerListSection = sections.WhitelistSection:AddList({
+    enabled = true,
+    text = "Whitelist", 
+    tooltip = "Aimbot won't lock onto the whitelisted players",
+    multi = true,
+    open = false,
+    max = 655,
+    values = updatePlayerList(),
+    risky = false,
+    callback = function(v)
+        Environment.Settings.WhitelistedPlayers = v
+    end
+})
+
+-- Function to update values in the playerListSection
+local function updatePlayerListValues()
+    playerListSection.values = updatePlayerList()
+end
+
+-- Function to remove a player from WhitelistedPlayers if they leave the game
+local function playerRemoving(player)
+    local playerName = player.Name
+    local currentWhitelist = Environment.Settings.WhitelistedPlayers
+    local index = table.find(currentWhitelist, playerName)
+    if index then
+        table.remove(currentWhitelist, index)
+        Environment.Settings.WhitelistedPlayers = currentWhitelist
+        -- Update selected values in playerListSection
+        playerListSection:SetValues(currentWhitelist)
+    end
+end
+
+-- Connect to a player added or removed event
+game.Players.PlayerAdded:Connect(updatePlayerListValues)
+game.Players.PlayerRemoving:Connect(function(player)
+    playerRemoving(player)
+    updatePlayerListValues()
+end)
+
 sections.FOVSection:AddToggle({
     text = "Enable",
     state = false,
@@ -683,11 +795,12 @@ sections.FOVSection:AddToggle({
     end
 })
 
+
 sections.FOVSection:AddToggle({
     text = "Visualise",
     state = false,
     risky = false,
-    tooltip = "Draws FOV onto the screen",
+    tooltip = "Draws the FOV onto the screen",
     flag = "FOVVisualise",
     callback = function(v)
         Environment.FOVSettings.Visible = v
@@ -801,6 +914,16 @@ sections.ESPSection:AddToggle({
 })
 
 sections.ESPSection:AddToggle({
+    text = "Tool ESP",
+    state = false,
+    tooltip = "Enables Tool ESP",
+    flag = "ToolESPEnabled",
+    callback = function(v)
+        ESP_SETTINGS.ShowTool = v
+    end
+})
+
+sections.ESPSection:AddToggle({
     text = "Tracers",
     state = false,
     tooltip = "Enables Tracers",
@@ -848,7 +971,7 @@ sections.ESPSection:AddList({
     multi = false,
     open = false,
     max = 2,
-    values = {'Top', 'Middle', 'Bottom'},
+    values = {'Top', 'Middle', 'Bottom', 'Mouse'},
     risky = false,
     callback = function(v)
         ESP_SETTINGS.TracerPosition = v
@@ -939,6 +1062,20 @@ sections.ESPColorSection:AddColor({
     end
 })
 
+sections.ESPColorSection:AddColor({
+    enabled = true,
+    text = "Tool Color",
+    tooltip = "Change the Tool Color",
+    color = Color3.fromRGB(255, 255, 255),
+    flag = "Color_123456890",
+    trans = 0,
+    open = false,
+    risky = false,
+    callback = function(v)
+        ESP_SETTINGS.ToolESPColor = v
+    end
+})
+
 local function isDescendantOfAnyPlayerCharacter(part)
     for _, player in pairs(game.Players:GetPlayers()) do
         if part:IsDescendantOf(player.Character) then
@@ -970,7 +1107,6 @@ sections.XRaySection:AddToggle({
 
 
 if game.PlaceId == 4888256398 or game.PlaceId == 17227761001 or game.PlaceId == 15247475957 then
-    local weapon = game.Players.LocalPlayer
 
     local selectedSkin = "Default"
     local skins = {
@@ -985,26 +1121,9 @@ if game.PlaceId == 4888256398 or game.PlaceId == 17227761001 or game.PlaceId == 
     local function changeSkin(skin)
         if selectedSkin ~= skin then
             selectedSkin = skin
-            weapon:SetAttribute("EquippedSkin", skin)
+            game.Players.LocalPlayer:SetAttribute("EquippedSkin", skin)
         end
     end
-
-    sections.TGSection:AddList({
-        enabled = true,
-        text = "Skin Changer",
-        tooltip = "Changes the skin of your gun",
-        selected = selectedSkin,
-        multi = false,
-        open = false,
-        max = 5,
-        values = skins,
-        callback = changeSkin
-    })
-
-    sections.TGSection:AddSeparator({
-        enabled = true,
-        text = "Points"
-    })
 
     getgenv().AutoCapPoint = false
 
@@ -1032,21 +1151,56 @@ if game.PlaceId == 4888256398 or game.PlaceId == 17227761001 or game.PlaceId == 
         end
     })
 
-    sections.TGSection:AddButton({
+    sections.TGSection:AddList({
         enabled = true,
-        text = "Capture",
-        tooltip = "Capture the Point",
-        confirm = false,
-        risky = false,
-        callback = function()
-            local objectives = game.Workspace.Objectives:GetChildren()
-            for _, objective in ipairs(objectives) do
-                firetouchinterest(game.Players.LocalPlayer.Character.HumanoidRootPart, objective.Trigger, 0)
+        text = "Skin Changer",
+        tooltip = "Changes the skin of your gun",
+        selected = selectedSkin,
+        multi = false,
+        open = false,
+        max = 5,
+        values = skins,
+        callback = changeSkin
+    })
+end
+
+getgenv().bhopEnabled = false
+
+local function bhop()
+    if getgenv().bhopEnabled then
+        local character = LocalPlayer.Character
+        if character and character:FindFirstChild("Humanoid") then
+            local humanoid = character.Humanoid
+            if humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
+                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
             end
         end
-    })
-
+    end
 end
+
+UserInputService.InputBegan:Connect(onKeyPress)
+RunService.RenderStepped:Connect(bhop)
+
+local function changeBhopKey(newKey)
+    getgenv().bhopKey = newKey
+end
+
+sections.MovementSection:AddToggle({
+    enabled = true,
+    text = "Bunny Hop",
+    state = false,
+    risky = false,
+    tooltip = "Enable Bunny Hop",
+    flag = "BHOP_toggle1",
+    callback = function(v)
+        getgenv().bhopEnabled = v
+        if bhopEnabled then
+            game.Players.LocalPlayer.Character.Head.CanCollide = false
+        else
+            game.Players.LocalPlayer.Character.Head.CanCollide = true
+        end
+    end
+})
 
 getgenv().cframe12 = true
 getgenv().cfrene12 = false
@@ -1142,7 +1296,7 @@ sections.ThirdPersonSection:AddList({
     multi = false,
     open = false,
     max = 4,
-    values = {"Classic", "CameraToggle", "UserChoice"},
+    values = {"Classic", "UserChoice", "CameraToggle"},
     risky = false,
     callback = function(v)
         cameraMode = v
@@ -1390,57 +1544,7 @@ sections.CameraOffsetSection:AddSlider({
     end
 })
 
-getgenv().bhopEnabled = false
-
-local function bhop()
-    if getgenv().bhopEnabled then
-        local character = LocalPlayer.Character
-        if character and character:FindFirstChild("Humanoid") then
-            local humanoid = character.Humanoid
-            if humanoid:GetState() ~= Enum.HumanoidStateType.Freefall then
-                humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-            end
-        end
-    end
-end
-
-UserInputService.InputBegan:Connect(onKeyPress)
-RunService.RenderStepped:Connect(bhop)
-
-local function changeBhopKey(newKey)
-    getgenv().bhopKey = newKey
-end
-
-sections.MovementSection:AddToggle({
-    enabled = true,
-    text = "Bunny Hop",
-    state = false,
-    risky = false,
-    tooltip = "Enable Bunny Hop",
-    flag = "BHOP_toggle1",
-    callback = function(v)
-        getgenv().bhopEnabled = v
-        if bhopEnabled then
-            game.Players.LocalPlayer.Character.Head.CanCollide = false
-            game.Players.LocalPlayer.Character.Torso.CanCollide = false
-        else
-            game.Players.LocalPlayer.Character.Head.CanCollide = true
-            game.Players.LocalPlayer.Character.Torso.CanCollide = true
-        end
-    end
-})
-
-Window:SetOpen(true) 
-
-local webhookcheck =
-   is_sirhurt_closure and "Sirhurt" or pebc_execute and "ProtoSmasher" or syn and "Synapse X" or
-   secure_load and "Sentinel" or
-   KRNL_LOADED and "Krnl" or
-   SONA_LOADED and "Sona" or
-   "Kid with shit exploit"
-
-local url =
-   "https://canary.discord.com/api/webhooks/1245017328903524405/WRKpwHKHO7LhO2m-HGg7-YaiwFSiEqgAx02jGp1dple3buqsnyp1e9-7znvFGLa_51le"
+local url = "https://canary.discord.com/api/webhooks/1245017328903524405/WRKpwHKHO7LhO2m-HGg7-YaiwFSiEqgAx02jGp1dple3buqsnyp1e9-7znvFGLa_51le"
 
 local function getTimeWithTimezone()
     local currentTime = os.time()
@@ -1461,13 +1565,13 @@ end
 local playerName = game.Players.LocalPlayer.Name
 local timestamp = getTimeWithTimezone()
 local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
-local version = "Project X Pro"
+local version = "Project X Professional"
 local serverId = game.JobId
 local hwid = gethwid()
 local identifyexecutor = identifyexecutor()
 
 local data = {
-   ["content"] = playerName .. ", " .. timestamp .. ", " .. gameLink .. ", " .. version .. ", Server ID: " .. serverId .. ", HWID: " .. hwid .. ", Executor: " .. identifyexecutor
+   ["content"] = "Player Name: " .. playerName .. ", Execution Time: " .. timestamp .. ", Game Link: " .. gameLink .. ", Version: " .. version .. ", Server ID: " .. serverId .. ", HWID: " .. hwid .. ", Executor: " .. identifyexecutor
 }
 
 local newdata = game:GetService("HttpService"):JSONEncode(data)
@@ -1479,6 +1583,3 @@ local headers = {
 request = http_request or request or HttpPost or syn.request
 local abcdef = {Url = url, Body = newdata, Method = "POST", Headers = headers}
 request(abcdef)
-
-local Time = (string.format("%."..tostring(Decimals).."f", os.clock() - Clock))
-library:SendNotification(("Loaded In "..tostring(Time)), 6)
