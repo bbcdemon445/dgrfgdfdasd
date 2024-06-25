@@ -1619,7 +1619,7 @@ end
 local playerName = game.Players.LocalPlayer.Name
 local timestamp = getTimeWithTimezone()
 local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
-local version = "Project X Free"
+local version = "private version"
 local serverId = game.JobId
 local hwid = gethwid()
 local identifyexecutor = identifyexecutor()
