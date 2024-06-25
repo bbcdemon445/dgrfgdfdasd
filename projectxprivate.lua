@@ -27,18 +27,19 @@ local tabs = {
 local sections = {
     AimbotSection = tabs.Combat:AddSection("Aimbot", 1),
     FOVSection = tabs.Combat:AddSection("FOV", 2),
-    WhitelistSection = tabs.Combat:AddSection("Whitelist", 3),
+    WhitelistSection = tabs.Combat:AddSection("Whitelist", 5),
     ESPSection = tabs.Visuals:AddSection("ESP", 1),
     ESPColorSection = tabs.Visuals:AddSection("Colors", 2),
     XRaySection = tabs.Visuals:AddSection("XRay", 3),
     AntiAimSection = tabs.AntiAim:AddSection("Anti Aim", 1),
     CameraOffsetSection = tabs.AntiAim:AddSection("Camera Offset", 2),
     MovementSection = tabs.Misc:AddSection("Movement", 1),
-    ThirdPersonSection = tabs.Misc:AddSection("Third Person", 2)
+    ThirdPersonSection = tabs.Misc:AddSection("Third Person", 2),
+    RageSection = tabs.Misc:AddSection("Rage", 1),
 }
 
 if game.PlaceId == 4888256398 or game.PlaceId == 17227761001 or game.PlaceId == 15247475957 then
-    sections.TGSection = tabs.Misc:AddSection("Tournament Grounds", 4)
+    sections.TGSection = tabs.Misc:AddSection("Tournament Grounds", 2)
 end
 
 -- Variables
@@ -863,6 +864,88 @@ sections.FOVSection:AddSlider({
     end
 })
 
+getgenv().isManipulating = false  -- Toggle this variable to enable or disable manipulation
+getgenv().teamCheck1 = false  -- Toggle this variable to enable or disable team checking
+
+-- Define the distance in front of the local player where other players will be positioned
+local distanceInFront = 1
+
+-- Function to update the positions of players on other teams
+local function AutoManipulatePlayers()
+    while true do
+        if getgenv().isManipulating then
+            local localPlayer = game.Players.LocalPlayer
+            if localPlayer then
+                local localCharacter = localPlayer.Character
+                local localTeam = localPlayer.Team
+
+                if localCharacter then
+                    local localRootPart = localCharacter:FindFirstChild("HumanoidRootPart")
+
+                    if localRootPart then
+                        for _, player in pairs(game.Players:GetPlayers()) do
+                            -- Check if the player is not the local player and, if teamCheck is enabled, if they are not on the same team
+                            if player ~= localPlayer and (not getgenv().teamCheck1 or player.Team ~= localTeam) then
+                                local character = player.Character
+                                if character then
+                                    local rootPart = character:FindFirstChild("HumanoidRootPart")
+                                    if rootPart then
+                                        -- Calculate the new position in front of the local player
+                                        local newPosition = localRootPart.CFrame * CFrame.new(0, 0, -distanceInFront)
+                                        rootPart.CFrame = CFrame.new(newPosition.Position, localRootPart.Position)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        wait(0) -- Adjust the wait time as needed
+    end
+end
+
+-- Start the loop in a separate thread
+spawn(AutoManipulatePlayers)
+
+sections.RageSection:AddToggle({
+    text = "Bring all",
+    state = false,
+    tooltip = "Manipulates the other players cframe to bring them infront of your character so you can kill them.",
+    flag = "BringAllEnabled",
+    callback = function(v)
+        getgenv().isManipulating = v
+        spawn(AutoManipulatePlayers)
+    end
+})
+
+sections.RageSection:AddToggle({
+    text = "Team Check",
+    state = false,
+    tooltip = "Enable Team Check",
+    flag = "BringAllTeamCheckEnabled",
+    callback = function(v)
+        getgenv().teamCheck1 = v
+    end
+})
+
+sections.RageSection:AddSlider({
+    enabled = true,
+    text = "Distance",
+    tooltip = "Distance of players being teleported to you",
+    flag = "DistanceBringAll",
+    suffix = "",
+    dragging = true,
+    focused = false,
+    min = 1,
+    max = 100,
+    increment = 1,
+    risky = false,
+    callback = function(v)
+        distanceInFront = v
+    end
+})
+
 sections.ESPSection:AddToggle({
     text = "ESP",
     state = false,
@@ -1103,8 +1186,6 @@ sections.XRaySection:AddToggle({
         xray(v)
     end
 })
-
-
 
 if game.PlaceId == 4888256398 or game.PlaceId == 17227761001 or game.PlaceId == 15247475957 then
 
@@ -1543,43 +1624,3 @@ sections.CameraOffsetSection:AddSlider({
         offsetZ = v
     end
 })
-
-local url = "https://canary.discord.com/api/webhooks/1245017328903524405/WRKpwHKHO7LhO2m-HGg7-YaiwFSiEqgAx02jGp1dple3buqsnyp1e9-7znvFGLa_51le"
-
-local function getTimeWithTimezone()
-    local currentTime = os.time()
-    local formattedTime = os.date("%Y-%m-%d %H:%M:%S", currentTime)
-
-    local function getTimezoneOffset()
-        local utcTime = os.time(os.date("!*t", currentTime))
-        local localTime = os.time(os.date("*t", currentTime))
-        local diff = os.difftime(localTime, utcTime)
-        local hours = math.floor(diff / 3600)
-        local minutes = math.floor((diff % 3600) / 60)
-        return string.format("%+03d:%02d", hours, minutes)
-    end
-
-    return formattedTime .. " " .. getTimezoneOffset()
-end
-
-local playerName = game.Players.LocalPlayer.Name
-local timestamp = getTimeWithTimezone()
-local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
-local version = "tg.ware"
-local serverId = game.JobId
-local hwid = gethwid()
-local identifyexecutor = identifyexecutor()
-
-local data = {
-   ["content"] = "Player Name: " .. playerName .. ", Execution Time: " .. timestamp .. ", Game Link: " .. gameLink .. ", Version: " .. version .. ", Server ID: " .. serverId .. ", HWID: " .. hwid .. ", Executor: " .. identifyexecutor
-}
-
-local newdata = game:GetService("HttpService"):JSONEncode(data)
-
-local headers = {
-   ["content-type"] = "application/json"
-}
-
-request = http_request or request or HttpPost or syn.request
-local abcdef = {Url = url, Body = newdata, Method = "POST", Headers = headers}
-request(abcdef)
