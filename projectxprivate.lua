@@ -48,14 +48,7 @@ local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 local Cache = {}
-local lplr = game.Players.LocalPlayer
-local mouse = game:GetService("Players").LocalPlayer:GetMouse()
-local mousePosition = Vector2.new(mouse.X, mouse.Y)
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-
-local mouse = Players.LocalPlayer:GetMouse()
+local mouse = LocalPlayer:GetMouse()
 local mousePosition = Vector2.new(mouse.X, mouse.Y)
 
 -- Function to update mouse position
@@ -63,9 +56,7 @@ local function updateMousePosition()
     mousePosition = Vector2.new(mouse.X, mouse.Y)
 end
 
-RunService.RenderStepped:Connect(function()
-    updateMousePosition()
-end)
+RunService.RenderStepped:Connect(updateMousePosition)
 
 -- Settings
 local ESP_SETTINGS = {
@@ -78,7 +69,6 @@ local ESP_SETTINGS = {
     HealthLowColor = Color3.new(1, 0, 0),
     CharSize = Vector2.new(4, 6),
     TeamCheck = false,
-    WallCheck = false,
     InvisCheck = false,
     AliveCheck = false,
     Enabled = false,
@@ -88,7 +78,7 @@ local ESP_SETTINGS = {
     ShowHealth = false,
     ShowDistance = false,
     ShowTracer = false,
-    TracerColor = Color3.new(1, 1, 1), 
+    TracerColor = Color3.new(1, 1, 1),
     TracerThickness = 1,
     TracerPosition = "Bottom",
     ToolESPColor = Color3.new(1, 1, 1),
@@ -103,27 +93,10 @@ local function create(class, properties)
     return drawing
 end
 
-local function isPlayerBehindWall(player)
-    local character = player.Character
-    if not character then
-        return false
-    end
-
-    local rootPart = character:FindFirstChild("HumanoidRootPart")
-    if not rootPart then
-        return false
-    end
-
-    local ray = Ray.new(Camera.CFrame.Position, (rootPart.Position - Camera.CFrame.Position).Unit * (rootPart.Position - Camera.CFrame.Position).Magnitude)
-    local hit, position = workspace:FindPartOnRayWithIgnoreList(ray, {LocalPlayer.Character, character})
-    
-    return hit and hit:IsA("Part")
-end
-
 local function createEsp(player)
     local esp = {
         boxOutline = create("Square", {
-            Color = ESP_SETTINGS.OutlineColor,   
+            Color = ESP_SETTINGS.OutlineColor,
             Thickness = 2,
             Filled = false,
             Visible = false
@@ -203,15 +176,15 @@ local function updateEsp()
         if character and (not ESP_SETTINGS.TeamCheck or (team and team ~= LocalPlayer.Team)) then
             local rootPart = character:FindFirstChild("HumanoidRootPart")
             local head = character:FindFirstChild("Head")
-            local humanoid1 = character:FindFirstChild("Humanoid")
-            local isBehindWall = ESP_SETTINGS.WallCheck and isPlayerBehindWall(player)
-            local isnotDead = ESP_SETTINGS.AliveCheck and humanoid1 and humanoid1.Health == 0
+            local humanoid = character:FindFirstChild("Humanoid")
+            local isnotDead = ESP_SETTINGS.AliveCheck and humanoid and humanoid.Health == 0
             local isInvisible = ESP_SETTINGS.InvisCheck and head and head.Transparency == 1
-            local shouldShow = not isBehindWall and ESP_SETTINGS.Enabled and not isInvisible and not isnotDead
+            local shouldShow = ESP_SETTINGS.Enabled and not isInvisible and not isnotDead
+
             if rootPart and shouldShow then
                 local position, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
                 if onScreen then
-                    local hrp2D = Camera:WorldToViewportPoint(rootPart.Position)
+                    local hrp2D = position
                     local charSize = (Camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(rootPart.Position + Vector3.new(0, 2.6, 0)).Y) / 2
                     local boxSize = Vector2.new(math.floor(charSize * 1.5), math.floor(charSize * 1.9))
                     local boxPosition = Vector2.new(math.floor(hrp2D.X - charSize * 1.5 / 2), math.floor(hrp2D.Y - charSize * 1.6 / 2))
@@ -224,17 +197,18 @@ local function updateEsp()
                     else
                         esp.name.Visible = false
                     end
-                    
+
                     if ESP_SETTINGS.ShowTool and ESP_SETTINGS.Enabled then
                         local tool = character:FindFirstChildOfClass("Tool")
                         if tool then
                             esp.tool.Visible = true
                             esp.tool.Text = string.lower(tool.Name)
-                            esp.tool.Position = Vector2.new(boxSize.X / 2 + boxPosition.X, boxPosition.Y - 32)
-                            esp.tool.Color = ESP_SETTINGS.ToolESPColor
                         else
-                            esp.tool.Visible = false
+                            esp.tool.Visible = true
+                            esp.tool.Text = "none"
                         end
+                        esp.tool.Position = Vector2.new(boxSize.X / 2 + boxPosition.X, boxPosition.Y - 32)
+                        esp.tool.Color = ESP_SETTINGS.ToolESPColor
                     else
                         esp.tool.Visible = false
                     end
@@ -248,19 +222,19 @@ local function updateEsp()
                             esp.box.Color = ESP_SETTINGS.BoxColor
                             esp.box.Visible = true
                             esp.boxOutline.Visible = true
-                            for _, line in ipairs(esp.boxLines) do
-                                line:Remove()
-                            end
                         end
+                    else
+                        esp.boxOutline.Visible = false
+                        esp.box.Visible = false
                     end
 
                     if ESP_SETTINGS.ShowHealth and ESP_SETTINGS.Enabled then
                         esp.healthOutline.Visible = true
                         esp.health.Visible = true
-                        local healthPercentage = player.Character.Humanoid.Health / player.Character.Humanoid.MaxHealth
+                        local healthPercentage = humanoid.Health / humanoid.MaxHealth
                         esp.healthOutline.From = Vector2.new(boxPosition.X - 5.5, boxPosition.Y + boxSize.Y)
                         esp.healthOutline.To = Vector2.new(esp.healthOutline.From.X, esp.healthOutline.From.Y - boxSize.Y)
-                        esp.health.From = Vector2.new((boxPosition.X - 5), boxPosition.Y + boxSize.Y)
+                        esp.health.From = Vector2.new(boxPosition.X - 5, boxPosition.Y + boxSize.Y)
                         esp.health.To = Vector2.new(esp.health.From.X, esp.health.From.Y - healthPercentage * boxSize.Y)
                         esp.health.Color = ESP_SETTINGS.HealthLowColor:Lerp(ESP_SETTINGS.HealthHighColor, healthPercentage)
                     else
@@ -280,7 +254,7 @@ local function updateEsp()
 
                     if ESP_SETTINGS.ShowTracer and ESP_SETTINGS.Enabled then
                         esp.tracer.Color = ESP_SETTINGS.TracerColor
-                        
+
                         if ESP_SETTINGS.TracerPosition == "Top" then
                             esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, 0)
                         elseif ESP_SETTINGS.TracerPosition == "Middle" then
@@ -291,7 +265,7 @@ local function updateEsp()
                         else
                             esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                         end
-                        
+
                         if ESP_SETTINGS.TeamCheck and player.TeamColor == LocalPlayer.TeamColor then
                             esp.tracer.Visible = false
                         else
@@ -301,7 +275,7 @@ local function updateEsp()
                     else
                         esp.tracer.Visible = false
                     end
-                    
+
                 else
                     for _, drawing in pairs(esp) do
                         drawing.Visible = false
@@ -319,7 +293,6 @@ local function updateEsp()
         end
     end
 end
-
 
 -- Initialize ESP for existing players
 for _, player in ipairs(Players:GetPlayers()) do
