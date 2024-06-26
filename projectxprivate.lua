@@ -83,6 +83,7 @@ local ESP_SETTINGS = {
     TracerPosition = "Bottom",
     ToolESPColor = Color3.new(1, 1, 1),
     ShowTool = false,
+    TeamColor = false,  -- Whether to use team colors
 }
 
 local function create(class, properties)
@@ -105,6 +106,12 @@ local function createEsp(player)
             Color = ESP_SETTINGS.BoxColor,
             Thickness = 1,
             Filled = false,
+            Visible = false
+        }),
+        filledbox = create("Square", {
+            Color = ESP_SETTINGS.BoxColor,
+            Thickness = 1,
+            Filled = true,
             Visible = false
         }),
         name = create("Text", {
@@ -193,7 +200,11 @@ local function updateEsp()
                         esp.name.Visible = true
                         esp.name.Text = string.lower(player.Name)
                         esp.name.Position = Vector2.new(boxSize.X / 2 + boxPosition.X, boxPosition.Y - 16)
-                        esp.name.Color = ESP_SETTINGS.NameColor
+                        if ESP_SETTINGS.TeamColor and team then
+                            esp.name.Color = team.TeamColor.Color
+                        else
+                            esp.name.Color = ESP_SETTINGS.NameColor
+                        end
                     else
                         esp.name.Visible = false
                     end
@@ -208,7 +219,11 @@ local function updateEsp()
                             esp.tool.Text = "none"
                         end
                         esp.tool.Position = Vector2.new(boxSize.X / 2 + boxPosition.X, boxPosition.Y - 32)
-                        esp.tool.Color = ESP_SETTINGS.ToolESPColor
+                        if ESP_SETTINGS.TeamColor and team then
+                            esp.tool.Color = team.TeamColor.Color
+                        else
+                            esp.tool.Color = ESP_SETTINGS.ToolESPColor
+                        end
                     else
                         esp.tool.Visible = false
                     end
@@ -217,9 +232,14 @@ local function updateEsp()
                         if ESP_SETTINGS.BoxType == "2D" then
                             esp.boxOutline.Size = boxSize
                             esp.boxOutline.Position = boxPosition
+                            esp.boxOutline.Color = ESP_SETTINGS.OutlineColor  -- Always use outline color
+                            if ESP_SETTINGS.TeamColor and team then
+                                esp.box.Color = team.TeamColor.Color
+                            else
+                                esp.box.Color = ESP_SETTINGS.BoxColor
+                            end
                             esp.box.Size = boxSize
                             esp.box.Position = boxPosition
-                            esp.box.Color = ESP_SETTINGS.BoxColor
                             esp.box.Visible = true
                             esp.boxOutline.Visible = true
                         end
@@ -247,14 +267,22 @@ local function updateEsp()
                         esp.distance.Text = string.format("%.1f studs", distance)
                         esp.distance.Position = Vector2.new(boxPosition.X + boxSize.X / 2, boxPosition.Y + boxSize.Y + 5)
                         esp.distance.Visible = true
-                        esp.distance.Color = ESP_SETTINGS.DistanceColor
+
+                        if ESP_SETTINGS.TeamColor and team then
+                            esp.distance.Color = team.TeamColor.Color
+                        else
+                            esp.distance.Color = ESP_SETTINGS.DistanceColor
+                        end
                     else
                         esp.distance.Visible = false
                     end
 
                     if ESP_SETTINGS.ShowTracer and ESP_SETTINGS.Enabled then
-                        esp.tracer.Color = ESP_SETTINGS.TracerColor
-
+                        if ESP_SETTINGS.TeamColor and team then
+                            esp.tracer.Color = team.TeamColor.Color
+                        else
+                            esp.tracer.Color = ESP_SETTINGS.TracerColor
+                        end
                         if ESP_SETTINGS.TracerPosition == "Top" then
                             esp.tracer.From = Vector2.new(Camera.ViewportSize.X / 2, 0)
                         elseif ESP_SETTINGS.TracerPosition == "Middle" then
@@ -572,7 +600,6 @@ function Environment.Functions:Exit()
 end
 
 Load()
-
 
 sections.AimbotSection:AddToggle({
     text = "Aimbot",
@@ -1010,7 +1037,7 @@ sections.ESPSection:AddToggle({
 })
 
 sections.ESPSection:AddToggle({
-    text = "Invis Check",
+    text = "Invisible Check",
     state = false,
     tooltip = "Stops drawing the ESP on invisible players",
     flag = "InvisCheckEnabled",
@@ -1031,6 +1058,16 @@ sections.ESPSection:AddList({
     risky = false,
     callback = function(v)
         ESP_SETTINGS.TracerPosition = v
+    end
+})
+
+sections.ESPColorSection:AddToggle({
+    text = "Team Colors",
+    state = false,
+    tooltip = "Makes the ESP use colors of the teams",
+    flag = "TeamColorEnabled",
+    callback = function(v)
+        ESP_SETTINGS.TeamColor = v
     end
 })
 
@@ -1414,7 +1451,6 @@ game:GetService("RunService").heartbeat:Connect(
         end
     end
 )
-
 
 sections.AntiAimSection:AddToggle({
     enabled = true,
