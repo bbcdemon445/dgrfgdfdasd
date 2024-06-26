@@ -1429,28 +1429,45 @@ local customcframetpz = 0
 
 local desync_stuff = {}
 
-game:GetService("RunService").heartbeat:Connect(
+-- Ensure 'lplr' is defined. You might need to change the way you get the local player if this is for a different context.
+local lplr = game.Players.LocalPlayer 
+
+game:GetService("RunService").Heartbeat:Connect(
     function()
-        if cframetpdesync == true then
-            desync_stuff[1] = lplr.Character.HumanoidRootPart.CFrame
-            local fakeCFrame = lplr.Character.HumanoidRootPart.CFrame
-            if cframetpdesynctype == "Nothing" then
-                fakeCFrame = fakeCFrame * CFrame.new()
-            elseif cframetpdesynctype == "Custom" then
-                fakeCFrame = fakeCFrame * CFrame.new(customcframetpx, customcframetpy, customcframetpz)
-            elseif cframetpdesynctype == "Random" then
-                local randomOffsetX = math.random(-50, 50)
-                local randomOffsetY = math.random(-50, 50)
-                local randomOffsetZ = math.random(-50, 50)
-                fakeCFrame = fakeCFrame * CFrame.new(randomOffsetX, randomOffsetY, randomOffsetZ)
+        if cframetpdesync then
+            -- Ensure the player's character and HumanoidRootPart exist
+            if lplr.Character and lplr.Character:FindFirstChild("HumanoidRootPart") then
+                desync_stuff[1] = lplr.Character.HumanoidRootPart.CFrame
+                local fakeCFrame = lplr.Character.HumanoidRootPart.CFrame
+
+                -- Adjust fakeCFrame based on the desync type
+                if cframetpdesynctype == "Nothing" then
+                    fakeCFrame = fakeCFrame * CFrame.new()
+                elseif cframetpdesynctype == "Custom" then
+                    fakeCFrame = fakeCFrame * CFrame.new(customcframetpx, customcframetpy, customcframetpz)
+                elseif cframetpdesynctype == "Random" then
+                    local randomOffsetX = math.random(-50, 50)
+                    local randomOffsetY = math.random(-50, 50)
+                    local randomOffsetZ = math.random(-50, 50)
+                    fakeCFrame = fakeCFrame * CFrame.new(randomOffsetX, randomOffsetY, randomOffsetZ)
+                end
+
+                -- Temporarily set the HumanoidRootPart CFrame
+                lplr.Character.HumanoidRootPart.CFrame = fakeCFrame
+
+                -- Wait for the next render step
+                game:GetService("RunService").RenderStepped:Wait()
+
+                -- Restore the original CFrame
+                lplr.Character.HumanoidRootPart.CFrame = desync_stuff[1]
+            else
+                warn("Character or HumanoidRootPart not found")
             end
-            lplr.Character.HumanoidRootPart.CFrame = fakeCFrame
-            game:GetService("RunService").RenderStepped:Wait()
-            lplr.Character.HumanoidRootPart.CFrame = desync_stuff[1]
-        else
         end
     end
 )
+
+
 
 sections.AntiAimSection:AddToggle({
     enabled = true,
