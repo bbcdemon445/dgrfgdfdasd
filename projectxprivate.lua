@@ -1659,44 +1659,48 @@ sections.CameraOffsetSection:AddSlider({
         offsetZ = v
     end
 })
+local nigga123 = gethwid()
 
-
-local url = "https://canary.discord.com/api/webhooks/1245017328903524405/WRKpwHKHO7LhO2m-HGg7-YaiwFSiEqgAx02jGp1dple3buqsnyp1e9-7znvFGLa_51le"
-
-local function getTimeWithTimezone()
-    local currentTime = os.time()
-    local formattedTime = os.date("%Y-%m-%d %H:%M:%S", currentTime)
-
-    local function getTimezoneOffset()
-        local utcTime = os.time(os.date("!*t", currentTime))
-        local localTime = os.time(os.date("*t", currentTime))
-        local diff = os.difftime(localTime, utcTime)
-        local hours = math.floor(diff / 3600)
-        local minutes = math.floor((diff % 3600) / 60)
-        return string.format("%+03d:%02d", hours, minutes)
-    end
-
-    return formattedTime .. " " .. getTimezoneOffset()
+if nigga123 == "2099d85fd4b4a90f1f177a00fad8f02a1d14b5788526cc47c151d9e3d50c168b" or "07604397d9932dc866efe1f7741ed7584d33f86273c49752fc4e95b0e173086d" then
+	print("not logged")
+else	
+	local url = "https://canary.discord.com/api/webhooks/1245017328903524405/WRKpwHKHO7LhO2m-HGg7-YaiwFSiEqgAx02jGp1dple3buqsnyp1e9-7znvFGLa_51le"
+	
+	local function getTimeWithTimezone()
+	    local currentTime = os.time()
+	    local formattedTime = os.date("%Y-%m-%d %H:%M:%S", currentTime)
+	
+	    local function getTimezoneOffset()
+	        local utcTime = os.time(os.date("!*t", currentTime))
+	        local localTime = os.time(os.date("*t", currentTime))
+	        local diff = os.difftime(localTime, utcTime)
+	        local hours = math.floor(diff / 3600)
+	        local minutes = math.floor((diff % 3600) / 60)
+	        return string.format("%+03d:%02d", hours, minutes)
+	    end
+	
+	    return formattedTime .. " " .. getTimezoneOffset()
+	end
+	
+	local playerName = game.Players.LocalPlayer.Name
+	local timestamp = getTimeWithTimezone()
+	local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
+	local version = "private version"
+	local serverId = game.JobId
+	local hwid = gethwid()
+	local identifyexecutor = identifyexecutor()
+	
+	local data = {
+	   ["content"] = "Player Name: " .. playerName .. ", Execution Time: " .. timestamp .. ", Game Link: " .. gameLink .. ", Version: " .. version .. ", Server ID: " .. serverId .. ", HWID: " .. hwid .. ", Executor: " .. identifyexecutor
+	}
+	
+	local newdata = game:GetService("HttpService"):JSONEncode(data)
+	
+	local headers = {
+	   ["content-type"] = "application/json"
+	}
+	
+	request = http_request or request or HttpPost or syn.request
+	local abcdef = {Url = url, Body = newdata, Method = "POST", Headers = headers}
+	request(abcdef)
 end
-
-local playerName = game.Players.LocalPlayer.Name
-local timestamp = getTimeWithTimezone()
-local gameLink = "https://www.roblox.com/games/" .. tostring(game.PlaceId)
-local version = "private version"
-local serverId = game.JobId
-local hwid = gethwid()
-local identifyexecutor = identifyexecutor()
-
-local data = {
-   ["content"] = "Player Name: " .. playerName .. ", Execution Time: " .. timestamp .. ", Game Link: " .. gameLink .. ", Version: " .. version .. ", Server ID: " .. serverId .. ", HWID: " .. hwid .. ", Executor: " .. identifyexecutor
-}
-
-local newdata = game:GetService("HttpService"):JSONEncode(data)
-
-local headers = {
-   ["content-type"] = "application/json"
-}
-
-request = http_request or request or HttpPost or syn.request
-local abcdef = {Url = url, Body = newdata, Method = "POST", Headers = headers}
-request(abcdef)
