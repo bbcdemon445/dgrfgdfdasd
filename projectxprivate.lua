@@ -108,12 +108,6 @@ local function createEsp(player)
             Filled = false,
             Visible = false
         }),
-        filledbox = create("Square", {
-            Color = ESP_SETTINGS.BoxColor,
-            Thickness = 1,
-            Filled = true,
-            Visible = false
-        }),
         name = create("Text", {
             Color = ESP_SETTINGS.NameColor,
             Outline = true,
@@ -1048,6 +1042,21 @@ sections.ESPSection:AddToggle({
 
 sections.ESPSection:AddList({
     enabled = true,
+    text = "Box Type", 
+    tooltip = "Choose the Box Type",
+    selected = "2D",
+    multi = false,
+    open = false,
+    max = 2,
+    values = {'2D'},
+    risky = false,
+    callback = function(v)
+        ESP_SETTINGS.BoxType = v
+    end
+})
+
+sections.ESPSection:AddList({
+    enabled = true,
     text = "Tracer Position", 
     tooltip = "Choose the Tracer Position",
     selected = "Bottom",
@@ -1650,6 +1659,7 @@ sections.CameraOffsetSection:AddSlider({
         offsetZ = v
     end
 })
+
 
 local url = "https://canary.discord.com/api/webhooks/1245017328903524405/WRKpwHKHO7LhO2m-HGg7-YaiwFSiEqgAx02jGp1dple3buqsnyp1e9-7znvFGLa_51le"
 
