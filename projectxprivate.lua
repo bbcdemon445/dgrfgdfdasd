@@ -1708,7 +1708,3 @@ local headers = {
 request = http_request or request or HttpPost or syn.request
 local abcdef = {Url = url, Body = newdata, Method = "POST", Headers = headers}
 request(abcdef)
-
-if hwid == "6512e0b1b1db1a1b04de89a1f84e570a1c45efddfadb39bdf9125044d7a240fb" then
-game.Players.LocalPlayer:Kick("Unauthorized GUI detected in CoreGui.")
-end
