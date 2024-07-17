@@ -1139,7 +1139,7 @@ SilentAimFOVSection:AddSlider('FOVRadius', {
     Text = 'Radius',
     Default = 250,
     Min = 0,
-    Max = 1600,
+    Max = 3200,
     Rounding = 1,
     Compact = false,
     Callback = function(Value)
