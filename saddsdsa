@@ -64,6 +64,7 @@ fov_circle.Thickness = 1
 fov_circle.NumSides = 100
 fov_circle.Radius = 180
 fov_circle.Filled = false
+fov_circle.Sides = 12
 fov_circle.Visible = false
 fov_circle.Transparency = 1
 fov_circle.Color = Color3.fromRGB(54, 57, 241)
